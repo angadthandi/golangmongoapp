@@ -1,0 +1,7 @@
+version: '3'
+services:
+  web:
+    build: ./golangapp
+    container_name: golangapp
+    ports:
+     - "9002:9002"
