@@ -5,3 +5,10 @@ services:
     container_name: golangapp
     ports:
      - "9002:9002"
+    depends_on: 
+      - database
+  database:
+    image: mongo:4.0
+    container_name: mongodbservice
+    ports:
+     - "27017:27017"
