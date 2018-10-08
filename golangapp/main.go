@@ -5,13 +5,9 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/angadthandi/golangmongoapp/golangapp/config"
 	"github.com/angadthandi/golangmongoapp/golangapp/test"
 	mgo "gopkg.in/mgo.v2"
-)
-
-var (
-	ServerPort           = ":9002"          // http server port
-	mongodatabaseservice = "mongodbservice" // mongodb service name
 )
 
 // test handler
@@ -30,7 +26,12 @@ func home(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	// connect to database
-	dbSession, err := mgo.Dial(mongodatabaseservice)
+	dbSession, err := mgo.Dial(
+		"mongodb://" +
+			config.MongoDBUsername + ":" +
+			config.MongoDBPassword + "@" +
+			config.MongoDBServiceName +
+			config.MongoDBPort)
 	if err != nil {
 		log.Fatalf("mongodb connection error : %v", err)
 	}
@@ -39,12 +40,12 @@ func main() {
 
 	dbSession.SetMode(mgo.Monotonic, true)
 
-	fmt.Printf("Listening on Port: %v", ServerPort)
+	fmt.Printf("Listening on Port: %v", config.ServerPort)
 
 	// start http web server
 	http.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
 		testHandler(w, r, dbSession)
 	})
 	http.HandleFunc("/", home)
-	log.Fatal(http.ListenAndServe(ServerPort, nil))
+	log.Fatal(http.ListenAndServe(config.ServerPort, nil))
 }
