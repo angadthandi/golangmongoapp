@@ -10,10 +10,11 @@ services:
   database:
     image: mongo:4.0
     container_name: mongodbservice
+    command: mongod --port 27016
     volumes:
       - ./mongodbdata/testdb:/mongodbdata/testdb
     ports:
-     - "27017:27017"
+     - "27016:27016"
     environment: 
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: password

@@ -4,7 +4,7 @@ const (
 	ServerPort = ":9002" // http server port
 
 	// MongoDB
-	MongoDBPort        = ":27017"
+	MongoDBPort        = ":27016"
 	MongoDBServiceName = "mongodbservice"
 	MongoDBUsername    = "root"
 	MongoDBPassword    = "password"
