@@ -1,5 +1,10 @@
 version: '3'
 services:
+  rabbitmq:
+      image: rabbitmq:latest
+      container_name: golangrabbitmq
+      ports:
+        - "5672:5672"
   web:
     build: ./golangapp
     container_name: golangapp
@@ -7,6 +12,9 @@ services:
      - "9002:9002"
     depends_on: 
       - database
+      - rabbitmq
+    # Keep it running.  
+    tty: true
   database:
     image: mongo:4.0
     container_name: mongodbservice
@@ -18,3 +26,13 @@ services:
     environment: 
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: password
+  products:
+    build: ./products
+    container_name: products
+    ports:
+     - "9003:9003"
+    depends_on: 
+      - database
+      - rabbitmq
+    # Keep it running.  
+    tty: true
