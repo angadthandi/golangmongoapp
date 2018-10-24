@@ -138,19 +138,21 @@ func Receive() {
 		return
 	}
 
-	bindRoutingKey := "hello"
+	sbindRoutingKey := []string{"hello"}
 
-	// bind queue to exchnage
-	err = ch.QueueBind(
-		q.Name,         // queue name
-		bindRoutingKey, // routing key
-		"logs_direct",  // exchange
-		false,
-		nil,
-	)
-	if err != nil {
-		log.Printf("Failed to declare a queue: %v", err)
-		return
+	for _, rKey := range sbindRoutingKey {
+		// bind queue to exchnage
+		err = ch.QueueBind(
+			q.Name,        // queue name
+			rKey,          // routing key
+			"logs_direct", // exchange
+			false,
+			nil,
+		)
+		if err != nil {
+			log.Printf("Failed to declare a queue: %v", err)
+			return
+		}
 	}
 
 	// consume messages on queue bound to exchange
