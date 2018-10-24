@@ -29,13 +29,13 @@ func Send() {
 	defer ch.Close()
 
 	err = ch.ExchangeDeclare(
-		"logs",   // name
-		"fanout", // type
-		true,     // durable
-		false,    // auto-deleted
-		false,    // internal
-		false,    // no-wait
-		nil,      // arguments
+		"logs_direct", // name
+		"direct",      // type
+		true,          // durable
+		false,         // auto-deleted
+		false,         // internal
+		false,         // no-wait
+		nil,           // arguments
 	)
 	if err != nil {
 		log.Printf("Failed to declare a exchange: %v", err)
@@ -55,12 +55,14 @@ func Send() {
 	// 	return
 	// }
 
+	publishRoutingKey := "product"
+
 	body := "Product Info!"
 	err = ch.Publish(
-		"logs", // exchange
-		"",     //q.Name, // routing key
-		false,  // mandatory
-		false,  // immediate
+		"logs_direct",     // exchange
+		publishRoutingKey, //q.Name, // routing key
+		false,             // mandatory
+		false,             // immediate
 		amqp.Publishing{
 			ContentType: "text/plain",
 			Body:        []byte(body),
@@ -109,13 +111,13 @@ func Receive() {
 
 	// declare exchange
 	err = ch.ExchangeDeclare(
-		"logs",   // name
-		"fanout", // type
-		true,     // durable
-		false,    // auto-deleted
-		false,    // internal
-		false,    // no-wait
-		nil,      // arguments
+		"logs_direct", // name
+		"direct",      // type
+		true,          // durable
+		false,         // auto-deleted
+		false,         // internal
+		false,         // no-wait
+		nil,           // arguments
 	)
 	if err != nil {
 		log.Printf("Failed to declare a exchange: %v", err)
@@ -136,11 +138,13 @@ func Receive() {
 		return
 	}
 
+	bindRoutingKey := "hello"
+
 	// bind queue to exchnage
 	err = ch.QueueBind(
-		q.Name, // queue name
-		"",     // routing key
-		"logs", // exchange
+		q.Name,         // queue name
+		bindRoutingKey, // routing key
+		"logs_direct",  // exchange
 		false,
 		nil,
 	)
