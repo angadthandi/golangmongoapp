@@ -28,23 +28,37 @@ func Send() {
 	}
 	defer ch.Close()
 
-	q, err := ch.QueueDeclare(
-		"product", // name
-		false,     // durable
-		false,     // delete when unused
-		false,     // exclusive
-		false,     // no-wait
-		nil,       // arguments
+	err = ch.ExchangeDeclare(
+		"logs",   // name
+		"fanout", // type
+		true,     // durable
+		false,    // auto-deleted
+		false,    // internal
+		false,    // no-wait
+		nil,      // arguments
 	)
 	if err != nil {
-		log.Printf("Failed to declare a queue: %v", err)
+		log.Printf("Failed to declare a exchange: %v", err)
 		return
 	}
 
+	// q, err := ch.QueueDeclare(
+	// 	"product", // name
+	// 	false,     // durable
+	// 	false,     // delete when unused
+	// 	false,     // exclusive
+	// 	false,     // no-wait
+	// 	nil,       // arguments
+	// )
+	// if err != nil {
+	// 	log.Printf("Failed to declare a queue: %v", err)
+	// 	return
+	// }
+
 	body := "Product Info!"
 	err = ch.Publish(
-		"",     // exchange
-		q.Name, // routing key
+		"logs", // exchange
+		"",     //q.Name, // routing key
 		false,  // mandatory
 		false,  // immediate
 		amqp.Publishing{
@@ -93,19 +107,49 @@ func Receive() {
 	}
 	defer ch.Close()
 
+	// declare exchange
+	err = ch.ExchangeDeclare(
+		"logs",   // name
+		"fanout", // type
+		true,     // durable
+		false,    // auto-deleted
+		false,    // internal
+		false,    // no-wait
+		nil,      // arguments
+	)
+	if err != nil {
+		log.Printf("Failed to declare a exchange: %v", err)
+		return
+	}
+
+	// declare queue
 	q, err := ch.QueueDeclare(
-		"hello", // name
-		false,   // durable
-		false,   // delete when unused
-		false,   // exclusive
-		false,   // no-wait
-		nil,     // arguments
+		"",    //"hello", // name
+		false, // durable
+		false, // delete when unused
+		false, // exclusive
+		false, // no-wait
+		nil,   // arguments
 	)
 	if err != nil {
 		log.Printf("Failed to declare a queue: %v", err)
 		return
 	}
 
+	// bind queue to exchnage
+	err = ch.QueueBind(
+		q.Name, // queue name
+		"",     // routing key
+		"logs", // exchange
+		false,
+		nil,
+	)
+	if err != nil {
+		log.Printf("Failed to declare a queue: %v", err)
+		return
+	}
+
+	// consume messages on queue bound to exchange
 	msgs, err := ch.Consume(
 		q.Name, // queue
 		"",     // consumer
