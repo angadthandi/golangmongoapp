@@ -14,4 +14,14 @@ const (
 	RabbitMQServiceName = "golangrabbitmq"
 	RabbitMQUsername    = "guest"
 	RabbitMQPassword    = "guest"
+
+	// RabbitMQ Exchange
+	ExchangeName = "golangmongoapp_direct"
+	ExchangeType = "direct"
+
+	// Goapp Publish Routing Key
+	GoappPublishRoutingKey = "goapp"
+
+	// RabbitMQ Products Routing Key
+	ProductsRoutingKey = "product"
 )

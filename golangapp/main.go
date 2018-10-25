@@ -11,12 +11,18 @@ import (
 	mgo "gopkg.in/mgo.v2"
 )
 
+var MessagingClient messages.IMessagingClient
+
 // send message on rabbitmq
 func sendMQ(
 	w http.ResponseWriter,
 	r *http.Request,
 ) {
-	messages.Send()
+	MessagingClient.Send(
+		config.ExchangeName,
+		config.ExchangeType,
+		config.GoappPublishRoutingKey,
+	)
 	fmt.Fprintf(w, "GolangApp Send Page! %s", "send")
 }
 
@@ -25,7 +31,14 @@ func receiveMQ(
 	w http.ResponseWriter,
 	r *http.Request,
 ) {
-	messages.Receive()
+	var sbindRoutingKeys []string
+	sbindRoutingKeys = append(sbindRoutingKeys, config.ProductsRoutingKey)
+
+	MessagingClient.Receive(
+		config.ExchangeName,
+		config.ExchangeType,
+		sbindRoutingKeys,
+	)
 	fmt.Fprintf(w, "GolangApp Receive Page! %s", "receive")
 }
 
@@ -59,8 +72,18 @@ func main() {
 
 	dbSession.SetMode(mgo.Monotonic, true)
 
+	// connect to AMQP
+	MessagingClient = &messages.MessagingClient{}
+	MessagingClient.Connect()
+
+	defer MessagingClient.Close()
+
 	// start receiver
-	go messages.Receive()
+	go MessagingClient.Receive(
+		config.ExchangeName,
+		config.ExchangeType,
+		[]string{config.ProductsRoutingKey},
+	)
 
 	fmt.Printf("Listening on Port: %v", config.ServerPort)
 
