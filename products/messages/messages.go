@@ -4,14 +4,13 @@ import (
 	"log"
 	"time"
 
-	"github.com/angadthandi/golangmongoapp/products/config"
 	"github.com/streadway/amqp"
 )
 
 // Defines our interface for connecting and consuming messages.
 type IMessagingClient interface {
 	Connect()
-	Send(exchangeName string, exchangeType string, publishRoutingKey string)
+	Send(exchangeName string, exchangeType string, publishRoutingKey string, msg []byte)
 	Receive(exchangeName string, exchangeType string, sbindRoutingKeys []string)
 	Close()
 }
@@ -23,10 +22,10 @@ type MessagingClient struct {
 
 func (m *MessagingClient) Connect() {
 	connStr := "amqp://" +
-		config.RabbitMQUsername + ":" +
-		config.RabbitMQPassword + "@" +
-		config.RabbitMQServiceName +
-		config.RabbitMQPort
+		RabbitMQUsername + ":" +
+		RabbitMQPassword + "@" +
+		RabbitMQServiceName +
+		RabbitMQPort
 
 	var err error
 	m.conn, err = amqp.Dial(connStr)
@@ -52,6 +51,7 @@ func (m *MessagingClient) Send(
 	exchangeName string,
 	exchangeType string,
 	publishRoutingKey string,
+	msg []byte,
 ) {
 	ch, err := m.conn.Channel()
 	if err != nil {
@@ -62,7 +62,7 @@ func (m *MessagingClient) Send(
 
 	err = ch.ExchangeDeclare(
 		exchangeName, // "logs_direct", // name
-		exchangeType, // type
+		exchangeType, // "direct",     // type
 		true,         // durable
 		false,        // auto-deleted
 		false,        // internal
@@ -74,22 +74,6 @@ func (m *MessagingClient) Send(
 		return
 	}
 
-	// q, err := ch.QueueDeclare(
-	// 	"product", // name
-	// 	false,     // durable
-	// 	false,     // delete when unused
-	// 	false,     // exclusive
-	// 	false,     // no-wait
-	// 	nil,       // arguments
-	// )
-	// if err != nil {
-	// 	log.Printf("Failed to declare a queue: %v", err)
-	// 	return
-	// }
-
-	// publishRoutingKey := "product"
-
-	body := "Product Info!"
 	err = ch.Publish(
 		exchangeName,      // "logs_direct",     // exchange
 		publishRoutingKey, //q.Name, // routing key
@@ -97,9 +81,9 @@ func (m *MessagingClient) Send(
 		false,             // immediate
 		amqp.Publishing{
 			ContentType: "text/plain",
-			Body:        []byte(body),
+			Body:        msg,
 		})
-	log.Printf(" [x] Sent %s", body)
+	log.Printf(" [x] Sent Message: %s", msg)
 	if err != nil {
 		log.Printf("Failed to publish a message: %v", err)
 		return
@@ -111,7 +95,7 @@ func (m *MessagingClient) Receive(
 	exchangeType string,
 	sbindRoutingKeys []string,
 ) {
-	log.Println("ProductApp Receiver Started")
+	log.Println("Receiver Started")
 
 	ch, err := m.conn.Channel()
 	if err != nil {
@@ -123,7 +107,7 @@ func (m *MessagingClient) Receive(
 	// declare exchange
 	err = ch.ExchangeDeclare(
 		exchangeName, // "logs_direct", // name
-		exchangeType, // "direct",      // type
+		exchangeType, // "direct",     // type
 		true,         // durable
 		false,        // auto-deleted
 		false,        // internal
@@ -137,7 +121,7 @@ func (m *MessagingClient) Receive(
 
 	// declare queue
 	q, err := ch.QueueDeclare(
-		"",    //"hello", // name
+		"",    //"product", // name
 		false, // durable
 		false, // delete when unused
 		false, // exclusive
@@ -148,8 +132,6 @@ func (m *MessagingClient) Receive(
 		log.Printf("Failed to declare a queue: %v", err)
 		return
 	}
-
-	// sbindRoutingKeys := []string{"hello"}
 
 	for _, rKey := range sbindRoutingKeys {
 		// bind queue to exchnage

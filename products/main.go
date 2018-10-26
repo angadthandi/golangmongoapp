@@ -16,10 +16,13 @@ func sendMQ(
 	w http.ResponseWriter,
 	r *http.Request,
 ) {
+	msg := "Product Info!"
+
 	MessagingClient.Send(
 		config.ExchangeName,
 		config.ExchangeType,
 		config.ProductsPublishRoutingKey,
+		[]byte(msg),
 	)
 	fmt.Fprintf(w, "ProductApp Send Page! %s", "send")
 }

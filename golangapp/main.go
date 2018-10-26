@@ -18,10 +18,13 @@ func sendMQ(
 	w http.ResponseWriter,
 	r *http.Request,
 ) {
+	msg := "Hello World!"
+
 	MessagingClient.Send(
 		config.ExchangeName,
 		config.ExchangeType,
 		config.GoappPublishRoutingKey,
+		[]byte(msg),
 	)
 	fmt.Fprintf(w, "GolangApp Send Page! %s", "send")
 }
