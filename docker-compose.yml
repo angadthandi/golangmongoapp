@@ -36,3 +36,9 @@ services:
       - rabbitmq
     # Keep it running.
     tty: true
+
+
+# view container logs
+# docker logs <container_name>
+# follow logs for container
+# docker logs -f <container_name>

@@ -1,6 +1,11 @@
 package test
 
 import (
+	"fmt"
+	"net/http"
+
+	"github.com/angadthandi/golangmongoapp/golangapp/config"
+	"github.com/angadthandi/golangmongoapp/golangapp/messages"
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -10,6 +15,7 @@ type Person struct {
 	Phone string
 }
 
+// Test MongoDB Insert/Read
 func Echo(db *mgo.Session) string {
 	c := db.DB("testdb").C("people")
 	_ = c.Insert(
@@ -20,4 +26,32 @@ func Echo(db *mgo.Session) string {
 	_ = c.Find(bson.M{"name": "Alex"}).One(&result)
 
 	return result.Phone
+}
+
+// Test Routes ----------------------------------------
+
+// send message on rabbitmq
+func SendMQ(
+	w http.ResponseWriter,
+	r *http.Request,
+	MessagingClient messages.IMessagingClient,
+) {
+	msg := "Hello World!"
+
+	MessagingClient.Send(
+		config.ExchangeName,
+		config.ExchangeType,
+		config.GoappPublishRoutingKey,
+		[]byte(msg),
+	)
+	fmt.Fprintf(w, "GolangApp Send Page! %s", "send")
+}
+
+// test handler
+func TestHandler(
+	w http.ResponseWriter,
+	r *http.Request,
+	db *mgo.Session,
+) {
+	fmt.Fprintf(w, "Test Page! %s", Echo(db))
 }

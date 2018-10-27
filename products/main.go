@@ -48,16 +48,19 @@ func home(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	// initialize logging
 	initLogger()
 	log.Info("Starting products main...")
 
-	// connect to AMQP
+	// connect to RabbitMQ
 	MessagingClient = &messages.MessagingClient{}
 	MessagingClient.Connect()
 
 	defer MessagingClient.Close()
 
 	// start receiver
+	// listen to messages from RabbitMQ
+	// sent by other micro services
 	go MessagingClient.Receive(
 		config.ExchangeName,
 		config.ExchangeType,
