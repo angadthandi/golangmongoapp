@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/angadthandi/golangmongoapp/golangapp/config"
 	"github.com/angadthandi/golangmongoapp/golangapp/messages"
 	"github.com/angadthandi/golangmongoapp/golangapp/test"
+
 	mgo "gopkg.in/mgo.v2"
 )
 
@@ -60,6 +60,9 @@ func home(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	initLogger()
+	log.Info("Starting goapp main...")
+
 	// connect to database
 	dbSession, err := mgo.Dial(
 		"mongodb://" +

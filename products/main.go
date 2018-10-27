@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/angadthandi/golangmongoapp/products/config"
@@ -49,6 +48,9 @@ func home(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	initLogger()
+	log.Info("Starting products main...")
+
 	// connect to AMQP
 	MessagingClient = &messages.MessagingClient{}
 	MessagingClient.Connect()
