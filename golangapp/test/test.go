@@ -6,6 +6,7 @@ import (
 
 	"github.com/angadthandi/golangmongoapp/golangapp/config"
 	"github.com/angadthandi/golangmongoapp/golangapp/messages"
+	log "github.com/sirupsen/logrus"
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -25,6 +26,7 @@ func Echo(db *mgo.Session) string {
 	result := Person{}
 	_ = c.Find(bson.M{"name": "Alex"}).One(&result)
 
+	log.Debugf("Echo Response: %v", result.Phone)
 	return result.Phone
 }
 
@@ -44,6 +46,8 @@ func SendMQ(
 		config.GoappPublishRoutingKey,
 		[]byte(msg),
 	)
+
+	log.Debugf("GolangApp Send Page! %s", "send")
 	fmt.Fprintf(w, "GolangApp Send Page! %s", "send")
 }
 
@@ -53,5 +57,6 @@ func TestHandler(
 	r *http.Request,
 	db *mgo.Session,
 ) {
+	log.Debugf("Test Page! %s", Echo(db))
 	fmt.Fprintf(w, "Test Page! %s", Echo(db))
 }

@@ -1,9 +1,9 @@
 package messages
 
 import (
-	"log"
 	"time"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
 )
 
@@ -30,7 +30,7 @@ func (m *MessagingClient) Connect() {
 	var err error
 	m.conn, err = amqp.Dial(connStr)
 	if err != nil {
-		log.Printf("Failed to connect to rabbitmq server: %v", err)
+		log.Errorf("Failed to connect to rabbitmq server: %v", err)
 
 		for {
 			reconn, err := amqp.Dial(connStr)
@@ -40,8 +40,8 @@ func (m *MessagingClient) Connect() {
 				break
 			}
 
-			log.Println(err)
-			log.Printf("Trying to reconnect to RabbitMQ at %s\n", connStr)
+			log.Debugf("AMQP connection error: %v\n", err)
+			log.Debugf("Trying to reconnect to RabbitMQ at %s\n", connStr)
 			time.Sleep(500 * time.Millisecond)
 		}
 	}
@@ -55,7 +55,7 @@ func (m *MessagingClient) Send(
 ) {
 	ch, err := m.conn.Channel()
 	if err != nil {
-		log.Printf("Failed to open a channel: %v", err)
+		log.Errorf("Failed to open a channel: %v", err)
 		return
 	}
 	defer ch.Close()
@@ -70,7 +70,7 @@ func (m *MessagingClient) Send(
 		nil,          // arguments
 	)
 	if err != nil {
-		log.Printf("Failed to declare a exchange: %v", err)
+		log.Errorf("Failed to declare a exchange: %v", err)
 		return
 	}
 
@@ -83,9 +83,9 @@ func (m *MessagingClient) Send(
 			ContentType: "text/plain",
 			Body:        msg,
 		})
-	log.Printf(" [x] Sent Message: %s", msg)
+	log.Debugf(" [x] Sent Message: %s", msg)
 	if err != nil {
-		log.Printf("Failed to publish a message: %v", err)
+		log.Errorf("Failed to publish a message: %v", err)
 		return
 	}
 }
@@ -95,11 +95,11 @@ func (m *MessagingClient) Receive(
 	exchangeType string,
 	sbindRoutingKeys []string,
 ) {
-	log.Println("Receiver Started")
+	log.Debugf("Receiver %v", "Started")
 
 	ch, err := m.conn.Channel()
 	if err != nil {
-		log.Printf("Failed to open a channel: %v", err)
+		log.Errorf("Failed to open a channel: %v", err)
 		return
 	}
 	defer ch.Close()
@@ -115,7 +115,7 @@ func (m *MessagingClient) Receive(
 		nil,          // arguments
 	)
 	if err != nil {
-		log.Printf("Failed to declare a exchange: %v", err)
+		log.Errorf("Failed to declare a exchange: %v", err)
 		return
 	}
 
@@ -129,7 +129,7 @@ func (m *MessagingClient) Receive(
 		nil,   // arguments
 	)
 	if err != nil {
-		log.Printf("Failed to declare a queue: %v", err)
+		log.Errorf("Failed to declare a queue: %v", err)
 		return
 	}
 
@@ -143,7 +143,7 @@ func (m *MessagingClient) Receive(
 			nil,
 		)
 		if err != nil {
-			log.Printf("Failed to declare a queue: %v", err)
+			log.Errorf("Failed to declare a queue: %v", err)
 			return
 		}
 	}
@@ -159,7 +159,7 @@ func (m *MessagingClient) Receive(
 		nil,    // args
 	)
 	if err != nil {
-		log.Printf("Failed to register a consumer: %v", err)
+		log.Errorf("Failed to register a consumer: %v", err)
 		return
 	}
 
@@ -167,11 +167,11 @@ func (m *MessagingClient) Receive(
 
 	go func() {
 		for d := range msgs {
-			log.Printf("Received a message: %s", d.Body)
+			log.Debugf("Received a message: %s", d.Body)
 		}
 	}()
 
-	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
+	log.Debugf(" [*] Waiting for messages. To exit press CTRL+C")
 	<-forever
 }
 

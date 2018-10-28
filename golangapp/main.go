@@ -2,20 +2,32 @@ package main
 
 import (
 	"net/http"
+	"os"
 
 	"github.com/angadthandi/golangmongoapp/golangapp/config"
 	"github.com/angadthandi/golangmongoapp/golangapp/messages"
 
+	log "github.com/sirupsen/logrus"
 	mgo "gopkg.in/mgo.v2"
 )
 
 // RabbitMQ messaging client
 var MessagingClient messages.IMessagingClient
 
+func init() {
+	// Log as JSON instead of the default ASCII formatter.
+	// log.SetFormatter(&log.JSONFormatter{})
+
+	// Output to stdout instead of the default stderr
+	// Can be any io.Writer, see below for File example
+	log.SetOutput(os.Stdout)
+
+	// Only log the warning severity or above.
+	log.SetLevel(log.DebugLevel)
+}
+
 func main() {
-	// initialize logging
-	initLogger()
-	log.Info("Starting goapp main...")
+	log.Infof("Started main: %v", "goapp")
 
 	// connect to database
 	dbSession, err := mgo.Dial(
