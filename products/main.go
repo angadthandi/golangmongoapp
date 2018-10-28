@@ -1,56 +1,31 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
+	"os"
 
 	"github.com/angadthandi/golangmongoapp/products/config"
 	"github.com/angadthandi/golangmongoapp/products/messages"
+
+	log "github.com/sirupsen/logrus"
 )
 
 var MessagingClient messages.IMessagingClient
 
-// send message on rabbitmq
-func sendMQ(
-	w http.ResponseWriter,
-	r *http.Request,
-) {
-	msg := "Product Info!"
+// initialize logger
+func init() {
+	// Log as JSON instead of the default ASCII formatter.
+	// log.SetFormatter(&log.JSONFormatter{})
 
-	MessagingClient.Send(
-		config.ExchangeName,
-		config.ExchangeType,
-		config.ProductsPublishRoutingKey,
-		[]byte(msg),
-	)
-	fmt.Fprintf(w, "ProductApp Send Page! %s", "send")
-}
+	// Output to stdout instead of the default stderr
+	// Can be any io.Writer, see below for File example
+	log.SetOutput(os.Stdout)
 
-// receive message on rabbitmq
-func receiveMQ(
-	w http.ResponseWriter,
-	r *http.Request,
-) {
-	var sbindRoutingKeys []string
-	sbindRoutingKeys = append(sbindRoutingKeys, config.GoappRoutingKey)
-
-	MessagingClient.Receive(
-		config.ExchangeName,
-		config.ExchangeType,
-		sbindRoutingKeys,
-	)
-	fmt.Fprintf(w, "ProductApp Receive Page! %s", "receive")
-}
-
-// handler for home
-func home(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Products Home Page! %s", r.URL.Path[1:])
+	// Only log the warning severity or above.
+	log.SetLevel(log.DebugLevel)
 }
 
 func main() {
-	// initialize logging
-	initLogger()
-	log.Info("Starting products main...")
+	log.Infof("Started main: %v", "products")
 
 	// connect to RabbitMQ
 	MessagingClient = &messages.MessagingClient{}
@@ -61,18 +36,9 @@ func main() {
 	// start receiver
 	// listen to messages from RabbitMQ
 	// sent by other micro services
-	go MessagingClient.Receive(
+	MessagingClient.Receive(
 		config.ExchangeName,
 		config.ExchangeType,
 		[]string{config.GoappRoutingKey},
 	)
-
-	fmt.Printf("Listening on Port: %v", config.ServerPort)
-
-	http.HandleFunc("/", home)
-	http.HandleFunc("/send", sendMQ)
-	http.HandleFunc("/receive", receiveMQ)
-
-	// start http web server
-	log.Fatal(http.ListenAndServe(config.ServerPort, nil))
 }

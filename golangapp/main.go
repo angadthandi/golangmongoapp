@@ -14,6 +14,7 @@ import (
 // RabbitMQ messaging client
 var MessagingClient messages.IMessagingClient
 
+// initialize logger
 func init() {
 	// Log as JSON instead of the default ASCII formatter.
 	// log.SetFormatter(&log.JSONFormatter{})

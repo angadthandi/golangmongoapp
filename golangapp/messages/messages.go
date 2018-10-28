@@ -168,6 +168,14 @@ func (m *MessagingClient) Receive(
 	go func() {
 		for d := range msgs {
 			log.Debugf("Received a message: %s", d.Body)
+
+			// Update the data on the service's
+			// associated datastore using a local transaction...
+
+			// The 'false' indicates the success of a single delivery, 'true' would
+			// mean that this delivery and all prior unacknowledged deliveries on this
+			// channel will be acknowledged.
+			// d.Ack(false)
 		}
 	}()
 

@@ -29,8 +29,6 @@ services:
   products:
     build: ./products
     container_name: products
-    ports:
-     - "9003:9003"
     depends_on: 
       - database
       - rabbitmq
