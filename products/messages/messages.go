@@ -1,6 +1,7 @@
 package messages
 
 import (
+	"math/rand"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -10,8 +11,18 @@ import (
 // Defines our interface for connecting and consuming messages.
 type IMessagingClient interface {
 	Connect()
-	Send(exchangeName string, exchangeType string, publishRoutingKey string, msg []byte)
-	Receive(exchangeName string, exchangeType string, sbindRoutingKeys []string)
+	Send(
+		exchangeName string,
+		exchangeType string,
+		publishRoutingKey string,
+		msg []byte,
+	)
+	Receive(
+		exchangeName string,
+		exchangeType string,
+		receiveRoutingKey string, // local app key
+		handlerFunc func(amqp.Delivery),
+	)
 	Close()
 }
 
@@ -21,6 +32,10 @@ type MessagingClient struct {
 }
 
 func (m *MessagingClient) Connect() {
+	// Initialize random seed default value
+	// for unique CorrelationId
+	rand.Seed(time.Now().UTC().UnixNano())
+
 	connStr := "amqp://" +
 		RabbitMQUsername + ":" +
 		RabbitMQPassword + "@" +
@@ -82,6 +97,13 @@ func (m *MessagingClient) Send(
 		amqp.Publishing{
 			ContentType: "text/plain",
 			Body:        msg,
+
+			// Store CorrelationId in a local map before publish.
+			// On receive, check for CorrelationId in local map.
+			//
+			// Work on received response for CorrelationId in local map,
+			// then delete CorrelationId from local map
+			CorrelationId: randomString(32),
 		})
 	log.Debugf(" [x] Sent Message: %s", msg)
 	if err != nil {
@@ -93,7 +115,8 @@ func (m *MessagingClient) Send(
 func (m *MessagingClient) Receive(
 	exchangeName string,
 	exchangeType string,
-	sbindRoutingKeys []string,
+	receiveRoutingKey string, // local app key
+	handlerFunc func(amqp.Delivery),
 ) {
 	log.Debugf("Receiver %v", "Started")
 
@@ -133,19 +156,17 @@ func (m *MessagingClient) Receive(
 		return
 	}
 
-	for _, rKey := range sbindRoutingKeys {
-		// bind queue to exchnage
-		err = ch.QueueBind(
-			q.Name,       // queue name
-			rKey,         // routing key
-			exchangeName, // "logs_direct", // exchange
-			false,
-			nil,
-		)
-		if err != nil {
-			log.Errorf("Failed to declare a queue: %v", err)
-			return
-		}
+	// bind queue to exchnage
+	err = ch.QueueBind(
+		q.Name,            // queue name
+		receiveRoutingKey, // routing key
+		exchangeName,      // "logs_direct", // exchange
+		false,
+		nil,
+	)
+	if err != nil {
+		log.Errorf("Failed to bind to a queue: %v", err)
+		return
 	}
 
 	// consume messages on queue bound to exchange
@@ -165,19 +186,7 @@ func (m *MessagingClient) Receive(
 
 	forever := make(chan bool)
 
-	go func() {
-		for d := range msgs {
-			log.Debugf("Received a message: %s", d.Body)
-
-			// Update the data on the service's
-			// associated datastore using a local transaction...
-
-			// The 'false' indicates the success of a single delivery, 'true' would
-			// mean that this delivery and all prior unacknowledged deliveries on this
-			// channel will be acknowledged.
-			// d.Ack(false)
-		}
-	}()
+	go consumeLoop(msgs, handlerFunc)
 
 	log.Debugf(" [*] Waiting for messages. To exit press CTRL+C")
 	<-forever
@@ -187,4 +196,34 @@ func (m *MessagingClient) Close() {
 	if m.conn != nil {
 		m.conn.Close()
 	}
+}
+
+func consumeLoop(
+	deliveries <-chan amqp.Delivery,
+	handlerFunc func(d amqp.Delivery),
+) {
+	for d := range deliveries {
+		// Invoke the handlerFunc func we passed as parameter.
+		handlerFunc(d)
+
+		// Update the data on the service's
+		// associated datastore using a local transaction...
+
+		// The 'false' indicates the success of a single delivery, 'true' would
+		// mean that this delivery and all prior unacknowledged deliveries on this
+		// channel will be acknowledged.
+		// d.Ack(false)
+	}
+}
+
+func randomString(l int) string {
+	bytes := make([]byte, l)
+	for i := 0; i < l; i++ {
+		bytes[i] = byte(randInt(65, 90))
+	}
+	return string(bytes)
+}
+
+func randInt(min int, max int) int {
+	return min + rand.Intn(max-min)
 }

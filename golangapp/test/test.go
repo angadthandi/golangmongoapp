@@ -1,6 +1,7 @@
 package test
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -38,13 +39,19 @@ func SendMQ(
 	r *http.Request,
 	MessagingClient messages.IMessagingClient,
 ) {
-	msg := "Hello World!"
+	var m struct{ Data string }
+	m.Data = "GoApp Publish Message!"
+
+	b, err := json.Marshal(m)
+	if err != nil {
+		log.Errorf("GoApp: send: unable to marshal: %v", err)
+	}
 
 	MessagingClient.Send(
 		config.ExchangeName,
 		config.ExchangeType,
-		config.GoappPublishRoutingKey,
-		[]byte(msg),
+		config.ProductsRoutingKey,
+		b,
 	)
 
 	log.Debugf("GolangApp Send Page! %s", "send")

@@ -13,8 +13,8 @@ const (
 	ExchangeName = "golangmongoapp_direct"
 	ExchangeType = "direct"
 
-	// Goapp Publish Routing Key
-	GoappPublishRoutingKey = "goapp"
+	// Goapp Routing Key
+	GoappRoutingKey = "goapp"
 
 	// RabbitMQ Products Routing Key
 	ProductsRoutingKey = "product"

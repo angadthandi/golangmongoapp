@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/angadthandi/golangmongoapp/golangapp/config"
+	"github.com/angadthandi/golangmongoapp/golangapp/events"
 	"github.com/angadthandi/golangmongoapp/golangapp/messages"
 
 	log "github.com/sirupsen/logrus"
@@ -57,7 +58,8 @@ func main() {
 	go MessagingClient.Receive(
 		config.ExchangeName,
 		config.ExchangeType,
-		[]string{config.ProductsRoutingKey},
+		config.GoappRoutingKey,
+		events.HandleRefreshEvent,
 	)
 
 	// configure route handlers
