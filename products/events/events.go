@@ -3,6 +3,9 @@ package events
 import (
 	"encoding/json"
 
+	"github.com/angadthandi/golangmongoapp/products/dummySend"
+	"github.com/angadthandi/golangmongoapp/products/messages"
+	"github.com/angadthandi/golangmongoapp/products/messagesRegistry"
 	log "github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
 )
@@ -20,7 +23,11 @@ type UpdateToken struct {
 	Id                 string `json:"id"`
 }
 
-func HandleRefreshEvent(d amqp.Delivery) {
+func HandleRefreshEvent(
+	d amqp.Delivery,
+	MessagingClient *messages.MessagingClient,
+	MessagesRegistryClient messagesRegistry.IMessagesRegistry,
+) {
 	body := d.Body
 	consumerTag := d.ConsumerTag
 	correlationId := d.CorrelationId
@@ -29,9 +36,42 @@ func HandleRefreshEvent(d amqp.Delivery) {
 	if err != nil {
 		log.Printf("Problem parsing UpdateToken: %v", err.Error())
 	} else {
-		log.Debugf("HandleRefreshEvent: Received a CorrelationId: %s", correlationId)
-		log.Debugf("HandleRefreshEvent: Received a ConsumerTag: %s", consumerTag)
-		log.Debugf("HandleRefreshEvent: Received a message: %s", body)
+		log.Debugf("HandleRefreshEvent: Received CorrelationId: %s", correlationId)
+		log.Debugf("HandleRefreshEvent: Received ConsumerTag: %s", consumerTag)
+		log.Debugf("HandleRefreshEvent: Received message: %s", body)
+
+		// check if correlationId exists
+		received, ok := MessagesRegistryClient.GetCorrelationData(correlationId)
+		if ok {
+			// existing event response by Outside App
+			// handle response
+
+			log.Debugf("HandleRefreshEvent: SentToAppName: %s, SentToAppEvent: %s",
+				received.SentToAppName, received.SentToAppEvent)
+
+			log.Debugf("HandleRefreshEvent: DeleteCorrelationMapData correlationId: %s",
+				correlationId)
+			MessagesRegistryClient.DeleteCorrelationMapData(correlationId)
+
+			HandleResponseToExistingMessage(
+				d.Body,
+				MessagingClient,
+				MessagesRegistryClient,
+			)
+		} else {
+			log.Debug("HandleRefreshEvent: correlationId not found!")
+			log.Debugf("HandleRefreshEvent: Received ReplyTo: %s", d.ReplyTo)
+
+			// new event sent by Outside App
+			// handle and respond back to Outside App
+			HandleNewMessage(
+				d.Body,
+				MessagingClient,
+				MessagesRegistryClient,
+				d.ReplyTo,
+				correlationId,
+			)
+		}
 
 		// if strings.Contains(updateToken.DestinationService, consumerTag) {
 		// 	log.Println("Consumertag is same as application name.")
@@ -46,4 +86,38 @@ func HandleRefreshEvent(d amqp.Delivery) {
 		// 	// 	viper.GetString("configBranch"))
 		// }
 	}
+}
+
+func HandleResponseToExistingMessage(
+	jsonMsg json.RawMessage,
+	MessagingClient *messages.MessagingClient,
+	MessagesRegistryClient messagesRegistry.IMessagesRegistry,
+) {
+	log.Debugf("HandleResponseToExistingMessage")
+	handleMessage(jsonMsg)
+}
+
+func HandleNewMessage(
+	jsonMsg json.RawMessage,
+	MessagingClient *messages.MessagingClient,
+	MessagesRegistryClient messagesRegistry.IMessagesRegistry,
+	replyToRoutingKey string,
+	receivedCorrelationId string,
+) {
+	log.Debugf("HandleNewMessage")
+	handleMessage(jsonMsg)
+
+	dummySend.DummySendToGoapp(
+		MessagingClient,
+		MessagesRegistryClient,
+		replyToRoutingKey,
+		receivedCorrelationId,
+	)
+}
+
+func handleMessage(
+	jsonMsg json.RawMessage,
+) {
+	log.Debugf("handleMessage: Received JSON: %s",
+		jsonMsg)
 }

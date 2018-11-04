@@ -7,6 +7,7 @@ import (
 
 	"github.com/angadthandi/golangmongoapp/golangapp/config"
 	"github.com/angadthandi/golangmongoapp/golangapp/messages"
+	"github.com/angadthandi/golangmongoapp/golangapp/messagesRegistry"
 	log "github.com/sirupsen/logrus"
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -38,6 +39,7 @@ func SendMQ(
 	w http.ResponseWriter,
 	r *http.Request,
 	MessagingClient messages.IMessagingClient,
+	MessagesRegistryClient messagesRegistry.IMessagesRegistry,
 ) {
 	var m struct{ Data string }
 	m.Data = "GoApp Publish Message!"
@@ -51,7 +53,10 @@ func SendMQ(
 		config.ExchangeName,
 		config.ExchangeType,
 		config.ProductsRoutingKey,
+		config.GoappRoutingKey,
 		b,
+		MessagesRegistryClient,
+		"",
 	)
 
 	log.Debugf("GolangApp Send Page! %s", "send")

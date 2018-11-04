@@ -7,13 +7,19 @@ import (
 	"github.com/angadthandi/golangmongoapp/golangapp/config"
 	"github.com/angadthandi/golangmongoapp/golangapp/events"
 	"github.com/angadthandi/golangmongoapp/golangapp/messages"
+	"github.com/angadthandi/golangmongoapp/golangapp/messagesRegistry"
 
 	log "github.com/sirupsen/logrus"
 	mgo "gopkg.in/mgo.v2"
 )
 
-// RabbitMQ messaging client
-var MessagingClient messages.IMessagingClient
+var (
+	// RabbitMQ messaging client
+	MessagingClient messages.IMessagingClient
+
+	// Messaging registry client
+	MessagesRegistryClient messagesRegistry.IMessagesRegistry
+)
 
 // initialize logger
 func init() {
@@ -52,6 +58,10 @@ func main() {
 
 	defer MessagingClient.Close()
 
+	// initialize message registry map
+	MessagesRegistryClient = &messagesRegistry.MessagesRegistryClient{}
+	MessagesRegistryClient.InitCorrelationMap()
+
 	// start receiver
 	// listen to messages from RabbitMQ
 	// sent by other micro services
@@ -60,6 +70,7 @@ func main() {
 		config.ExchangeType,
 		config.GoappRoutingKey,
 		events.HandleRefreshEvent,
+		MessagesRegistryClient,
 	)
 
 	// configure route handlers

@@ -7,6 +7,7 @@ import (
 
 	"github.com/angadthandi/golangmongoapp/golangapp/jsondefinitions"
 	"github.com/angadthandi/golangmongoapp/golangapp/messages"
+	"github.com/angadthandi/golangmongoapp/golangapp/messagesRegistry"
 	log "github.com/sirupsen/logrus"
 	mgo "gopkg.in/mgo.v2"
 )
@@ -17,6 +18,7 @@ func api(
 	r *http.Request,
 	db *mgo.Session,
 	MessagingClient messages.IMessagingClient,
+	MessagesRegistryClient messagesRegistry.IMessagesRegistry,
 ) {
 	var resp jsondefinitions.GenericAPIResponse
 

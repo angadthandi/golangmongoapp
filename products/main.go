@@ -6,11 +6,18 @@ import (
 	"github.com/angadthandi/golangmongoapp/products/config"
 	"github.com/angadthandi/golangmongoapp/products/events"
 	"github.com/angadthandi/golangmongoapp/products/messages"
+	"github.com/angadthandi/golangmongoapp/products/messagesRegistry"
 
 	log "github.com/sirupsen/logrus"
 )
 
-var MessagingClient messages.IMessagingClient
+var (
+	// RabbitMQ messaging client
+	MessagingClient messages.IMessagingClient
+
+	// Messaging registry client
+	MessagesRegistryClient messagesRegistry.IMessagesRegistry
+)
 
 // initialize logger
 func init() {
@@ -34,6 +41,10 @@ func main() {
 
 	defer MessagingClient.Close()
 
+	// initialize message registry map
+	MessagesRegistryClient = &messagesRegistry.MessagesRegistryClient{}
+	MessagesRegistryClient.InitCorrelationMap()
+
 	// start receiver
 	// listen to messages from RabbitMQ
 	// sent by other micro services
@@ -42,5 +53,6 @@ func main() {
 		config.ExchangeType,
 		config.ProductsRoutingKey,
 		events.HandleRefreshEvent,
+		MessagesRegistryClient,
 	)
 }

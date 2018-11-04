@@ -4,6 +4,7 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/angadthandi/golangmongoapp/golangapp/messagesRegistry"
 	log "github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
 )
@@ -15,13 +16,21 @@ type IMessagingClient interface {
 		exchangeName string,
 		exchangeType string,
 		publishRoutingKey string,
+		replyToRoutingKey string,
 		msg []byte,
+		MessagesRegistryClient messagesRegistry.IMessagesRegistry,
+		receivedCorrelationId string,
 	)
 	Receive(
 		exchangeName string,
 		exchangeType string,
 		receiveRoutingKey string, // local app key
-		handlerFunc func(amqp.Delivery),
+		handlerFunc func(
+			amqp.Delivery,
+			*MessagingClient,
+			messagesRegistry.IMessagesRegistry,
+		),
+		MessagesRegistryClient messagesRegistry.IMessagesRegistry,
 	)
 	Close()
 }
@@ -66,7 +75,10 @@ func (m *MessagingClient) Send(
 	exchangeName string,
 	exchangeType string,
 	publishRoutingKey string,
+	replyToRoutingKey string,
 	msg []byte,
+	MessagesRegistryClient messagesRegistry.IMessagesRegistry,
+	receivedCorrelationId string,
 ) {
 	ch, err := m.conn.Channel()
 	if err != nil {
@@ -89,6 +101,11 @@ func (m *MessagingClient) Send(
 		return
 	}
 
+	correlationId := randomString(32)
+	if receivedCorrelationId != "" {
+		correlationId = receivedCorrelationId
+	}
+
 	err = ch.Publish(
 		exchangeName,      // "logs_direct",     // exchange
 		publishRoutingKey, //q.Name, // routing key
@@ -103,20 +120,34 @@ func (m *MessagingClient) Send(
 			//
 			// Work on received response for CorrelationId in local map,
 			// then delete CorrelationId from local map
-			CorrelationId: randomString(32),
+			CorrelationId: correlationId,
+			ReplyTo:       replyToRoutingKey,
 		})
 	log.Debugf(" [x] Sent Message: %s", msg)
 	if err != nil {
 		log.Errorf("Failed to publish a message: %v", err)
 		return
 	}
+
+	// register sent message
+	log.Debugf(`messages Send: SetCorrelationMapData:
+	correlationId: %v, sentToAppName: %v, sentToAppEvent: %v`,
+		correlationId, publishRoutingKey, publishRoutingKey)
+	MessagesRegistryClient.SetCorrelationMapData(
+		correlationId, publishRoutingKey, publishRoutingKey,
+	)
 }
 
 func (m *MessagingClient) Receive(
 	exchangeName string,
 	exchangeType string,
 	receiveRoutingKey string, // local app key
-	handlerFunc func(amqp.Delivery),
+	handlerFunc func(
+		amqp.Delivery,
+		*MessagingClient,
+		messagesRegistry.IMessagesRegistry,
+	),
+	MessagesRegistryClient messagesRegistry.IMessagesRegistry,
 ) {
 	log.Debugf("Receiver %v", "Started")
 
@@ -186,7 +217,7 @@ func (m *MessagingClient) Receive(
 
 	forever := make(chan bool)
 
-	go consumeLoop(msgs, handlerFunc)
+	go m.consumeLoop(msgs, MessagesRegistryClient, handlerFunc)
 
 	log.Debugf(" [*] Waiting for messages. To exit press CTRL+C")
 	<-forever
@@ -198,13 +229,18 @@ func (m *MessagingClient) Close() {
 	}
 }
 
-func consumeLoop(
+func (m *MessagingClient) consumeLoop(
 	deliveries <-chan amqp.Delivery,
-	handlerFunc func(d amqp.Delivery),
+	MessagesRegistryClient messagesRegistry.IMessagesRegistry,
+	handlerFunc func(
+		d amqp.Delivery,
+		mc *MessagingClient,
+		mr messagesRegistry.IMessagesRegistry,
+	),
 ) {
 	for d := range deliveries {
 		// Invoke the handlerFunc func we passed as parameter.
-		handlerFunc(d)
+		handlerFunc(d, m, MessagesRegistryClient)
 
 		// Update the data on the service's
 		// associated datastore using a local transaction...

@@ -14,7 +14,7 @@ func configureRoutes(dbSession *mgo.Session) {
 
 	r.HandleFunc("/", home)
 	r.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
-		api(w, r, dbSession, MessagingClient)
+		api(w, r, dbSession, MessagingClient, MessagesRegistryClient)
 	})
 
 	// Test Routes --------------------------------
@@ -23,7 +23,7 @@ func configureRoutes(dbSession *mgo.Session) {
 		test.TestHandler(w, r, dbSession)
 	})
 	r.HandleFunc("/send", func(w http.ResponseWriter, r *http.Request) {
-		test.SendMQ(w, r, MessagingClient)
+		test.SendMQ(w, r, MessagingClient, MessagesRegistryClient)
 	})
 
 	http.Handle("/", r)
