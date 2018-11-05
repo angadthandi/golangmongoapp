@@ -8,15 +8,15 @@ import (
 	"github.com/angadthandi/golangmongoapp/golangapp/jsondefinitions"
 	"github.com/angadthandi/golangmongoapp/golangapp/messages"
 	"github.com/angadthandi/golangmongoapp/golangapp/messagesRegistry"
+	"github.com/mongodb/mongo-go-driver/mongo"
 	log "github.com/sirupsen/logrus"
-	mgo "gopkg.in/mgo.v2"
 )
 
 // handler for API
 func api(
 	w http.ResponseWriter,
 	r *http.Request,
-	db *mgo.Session,
+	dbClient *mongo.Client,
 	MessagingClient messages.IMessagingClient,
 	MessagesRegistryClient messagesRegistry.IMessagesRegistry,
 ) {

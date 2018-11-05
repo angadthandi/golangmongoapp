@@ -3,24 +3,25 @@ package main
 import (
 	"net/http"
 
+	"github.com/mongodb/mongo-go-driver/mongo"
+
 	"github.com/angadthandi/golangmongoapp/golangapp/test"
 	"github.com/gorilla/mux"
-	mgo "gopkg.in/mgo.v2"
 )
 
 // configure API Routes
-func configureRoutes(dbSession *mgo.Session) {
+func configureRoutes(dbClient *mongo.Client) {
 	r := mux.NewRouter().StrictSlash(true)
 
 	r.HandleFunc("/", home)
 	r.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
-		api(w, r, dbSession, MessagingClient, MessagesRegistryClient)
+		api(w, r, dbClient, MessagingClient, MessagesRegistryClient)
 	})
 
 	// Test Routes --------------------------------
 
 	r.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
-		test.TestHandler(w, r, dbSession)
+		test.TestHandler(w, r, dbClient)
 	})
 	r.HandleFunc("/send", func(w http.ResponseWriter, r *http.Request) {
 		test.SendMQ(w, r, MessagingClient, MessagesRegistryClient)

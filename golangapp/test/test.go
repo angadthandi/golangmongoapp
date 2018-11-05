@@ -1,6 +1,7 @@
 package test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -8,28 +9,77 @@ import (
 	"github.com/angadthandi/golangmongoapp/golangapp/config"
 	"github.com/angadthandi/golangmongoapp/golangapp/messages"
 	"github.com/angadthandi/golangmongoapp/golangapp/messagesRegistry"
+	"github.com/mongodb/mongo-go-driver/bson"
+	"github.com/mongodb/mongo-go-driver/mongo"
 	log "github.com/sirupsen/logrus"
-	mgo "gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
 )
 
 type Person struct {
+	// OID   objectid.ObjectID `bson:"_id"`
 	Name  string
 	Phone string
 }
 
 // Test MongoDB Insert/Read
-func Echo(db *mgo.Session) string {
-	c := db.DB("testdb").C("people")
-	_ = c.Insert(
-		&Person{"Alex", "+55 89 9556 9111"},
-		&Person{"John", "+55 98 8402 3256"})
+// func Echo(db *mgo.Session) string {
 
-	result := Person{}
-	_ = c.Find(bson.M{"name": "Alex"}).One(&result)
+// // connect to database
+// dbSession, err := mgo.Dial(
+// 	"mongodb://" +
+// 		config.MongoDBUsername + ":" +
+// 		config.MongoDBPassword + "@" +
+// 		config.MongoDBServiceName +
+// 		config.MongoDBPort)
+// if err != nil {
+// 	log.Fatalf("mongodb connection error : %v", err)
+// }
 
-	log.Debugf("Echo Response: %v", result.Phone)
-	return result.Phone
+// defer dbSession.Close()
+
+// dbSession.SetMode(mgo.Monotonic, true)
+
+// 	c := db.DB("testdb").C("people")
+// 	_ = c.Insert(
+// 		&Person{"Alex", "+55 89 9556 9111"},
+// 		&Person{"John", "+55 98 8402 3256"})
+
+// 	result := Person{}
+// 	_ = c.Find(bson.M{"name": "Alex"}).One(&result)
+
+// 	log.Debugf("Echo Response: %v", result.Phone)
+// 	return result.Phone
+// }
+
+// Test MongoDB Insert/Read with mongo-go-driver/mongo
+func Echo(dbClient *mongo.Client) string {
+	c := dbClient.Database("testdb").Collection("people")
+	p := Person{
+		// OID:   objectid.New(),
+		Name:  "Alex",
+		Phone: "+55 89 9556 9111",
+	}
+	_, err := c.InsertOne(
+		context.Background(),
+		p,
+	)
+
+	if err != nil {
+		log.Errorf("Echo Collection Insert error: %v", err)
+	}
+
+	ret := bson.NewDocument()
+	filter := bson.NewDocument(bson.EC.String("Name", "Alex"))
+	err = c.FindOne(context.Background(), filter).Decode(ret)
+	if err != nil {
+		log.Errorf("Echo Document Find error: %v", err)
+	}
+
+	log.Debugf("Echo Document decoded Result: %v", ret)
+	var person Person
+	person.Name = ret.Lookup("Name").StringValue()
+	person.Phone = ret.Lookup("Phone").StringValue()
+
+	return person.Phone
 }
 
 // Test Routes ----------------------------------------
@@ -67,8 +117,8 @@ func SendMQ(
 func TestHandler(
 	w http.ResponseWriter,
 	r *http.Request,
-	db *mgo.Session,
+	dbClient *mongo.Client,
 ) {
-	log.Debugf("Test Page! %s", Echo(db))
-	fmt.Fprintf(w, "Test Page! %s", Echo(db))
+	log.Debugf("Test Page! %s", Echo(dbClient))
+	fmt.Fprintf(w, "Test Page! %s", Echo(dbClient))
 }

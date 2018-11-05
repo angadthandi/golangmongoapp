@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"os"
 
@@ -10,7 +11,9 @@ import (
 	"github.com/angadthandi/golangmongoapp/golangapp/messagesRegistry"
 
 	log "github.com/sirupsen/logrus"
-	mgo "gopkg.in/mgo.v2"
+
+	// https://godoc.org/github.com/mongodb/mongo-go-driver/mongo
+	"github.com/mongodb/mongo-go-driver/mongo"
 )
 
 var (
@@ -37,20 +40,17 @@ func init() {
 func main() {
 	log.Infof("Started main: %v", "goapp")
 
-	// connect to database
-	dbSession, err := mgo.Dial(
-		"mongodb://" +
-			config.MongoDBUsername + ":" +
-			config.MongoDBPassword + "@" +
-			config.MongoDBServiceName +
-			config.MongoDBPort)
+	dbUrl := "mongodb://" +
+		config.MongoDBUsername + ":" +
+		config.MongoDBPassword + "@" +
+		config.MongoDBServiceName +
+		config.MongoDBPort
+	dbClient, err := mongo.Connect(context.Background(), dbUrl, nil)
 	if err != nil {
 		log.Fatalf("mongodb connection error : %v", err)
 	}
 
-	defer dbSession.Close()
-
-	dbSession.SetMode(mgo.Monotonic, true)
+	defer dbClient.Disconnect(context.Background())
 
 	// connect to RabbitMQ
 	MessagingClient = &messages.MessagingClient{}
@@ -74,7 +74,7 @@ func main() {
 	)
 
 	// configure route handlers
-	configureRoutes(dbSession)
+	configureRoutes(dbClient)
 
 	log.Printf("Listening on Port: %v", config.ServerPort)
 	// start http web server
