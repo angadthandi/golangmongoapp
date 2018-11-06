@@ -1,9 +1,8 @@
-package events
+package messages
 
 import (
 	"encoding/json"
 
-	"github.com/angadthandi/golangmongoapp/golangapp/messages"
 	log "github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
 )
@@ -21,10 +20,18 @@ type UpdateToken struct {
 	Id                 string `json:"id"`
 }
 
-func HandleRefreshEvent(
+func handleRefreshEvent(
 	d amqp.Delivery,
-	MessagingClient *messages.MessagingClient,
-	MessagesRegistryClient messages.IMessagesRegistry,
+	MessagingClient *MessagingClient,
+	MessagesRegistryClient IMessagesRegistry,
+	handlerFunc func(
+		*MessagingClient,
+		IMessagesRegistry,
+		json.RawMessage,
+		string,
+		string,
+		bool,
+	),
 ) {
 	body := d.Body
 	consumerTag := d.ConsumerTag
@@ -51,10 +58,13 @@ func HandleRefreshEvent(
 				correlationId)
 			MessagesRegistryClient.DeleteCorrelationMapData(correlationId)
 
-			HandleResponseToExistingMessage(
-				d.Body,
+			handlerFunc(
 				MessagingClient,
 				MessagesRegistryClient,
+				d.Body,
+				"",
+				"",
+				true,
 			)
 		} else {
 			log.Debug("HandleRefreshEvent: correlationId not found!")
@@ -62,53 +72,14 @@ func HandleRefreshEvent(
 
 			// new event sent by Outside App
 			// handle and respond back to Outside App
-			HandleNewMessage(
-				d.Body,
+			handlerFunc(
 				MessagingClient,
 				MessagesRegistryClient,
+				d.Body,
 				d.ReplyTo,
 				correlationId,
+				false,
 			)
 		}
-
-		// if strings.Contains(updateToken.DestinationService, consumerTag) {
-		// 	log.Println("Consumertag is same as application name.")
-
-		// 	// Consumertag is same as application name.
-
-		// 	// https://github.com/callistaenterprise/goblog/blob/P9/common/config/loader.go
-		// 	// LoadConfigurationFromBranch(
-		// 	// 	viper.GetString("configServerUrl"),
-		// 	// 	consumerTag,
-		// 	// 	viper.GetString("profile"),
-		// 	// 	viper.GetString("configBranch"))
-		// }
 	}
-}
-
-func HandleResponseToExistingMessage(
-	jsonMsg json.RawMessage,
-	MessagingClient *messages.MessagingClient,
-	MessagesRegistryClient messages.IMessagesRegistry,
-) {
-	log.Debugf("HandleResponseToExistingMessage")
-	handleMessage(jsonMsg)
-}
-
-func HandleNewMessage(
-	jsonMsg json.RawMessage,
-	MessagingClient *messages.MessagingClient,
-	MessagesRegistryClient messages.IMessagesRegistry,
-	replyToRoutingKey string,
-	receivedCorrelationId string,
-) {
-	log.Debugf("HandleNewMessage")
-	handleMessage(jsonMsg)
-}
-
-func handleMessage(
-	jsonMsg json.RawMessage,
-) {
-	log.Debugf("handleMessage: Received JSON: %s",
-		jsonMsg)
 }

@@ -1,6 +1,7 @@
 package messages
 
 import (
+	"encoding/json"
 	"math/rand"
 	"time"
 
@@ -19,15 +20,22 @@ type IMessagingClient interface {
 		msg []byte,
 		MessagesRegistryClient IMessagesRegistry,
 		receivedCorrelationId string,
+
+		// should be set to "false" to register message,
+		// based on correlationId match found or not
+		isReplyMessage bool,
 	)
 	Receive(
 		exchangeName string,
 		exchangeType string,
 		receiveRoutingKey string, // local app key
 		handlerFunc func(
-			amqp.Delivery,
 			*MessagingClient,
 			IMessagesRegistry,
+			json.RawMessage,
+			string,
+			string,
+			bool,
 		),
 		MessagesRegistryClient IMessagesRegistry,
 	)
@@ -78,6 +86,7 @@ func (m *MessagingClient) Send(
 	msg []byte,
 	MessagesRegistryClient IMessagesRegistry,
 	receivedCorrelationId string,
+	isReplyMessage bool,
 ) {
 	ch, err := m.conn.Channel()
 	if err != nil {
@@ -128,13 +137,16 @@ func (m *MessagingClient) Send(
 		return
 	}
 
-	// register sent message
-	log.Debugf(`messages Send: SetCorrelationMapData:
+	// register sent message only if NOT a reply
+	if !isReplyMessage {
+		// register sent message
+		log.Debugf(`messages Send: SetCorrelationMapData:
 	correlationId: %v, sentToAppName: %v, sentToAppEvent: %v`,
-		correlationId, publishRoutingKey, publishRoutingKey)
-	MessagesRegistryClient.SetCorrelationMapData(
-		correlationId, publishRoutingKey, publishRoutingKey,
-	)
+			correlationId, publishRoutingKey, publishRoutingKey)
+		MessagesRegistryClient.SetCorrelationMapData(
+			correlationId, publishRoutingKey, publishRoutingKey,
+		)
+	}
 }
 
 func (m *MessagingClient) Receive(
@@ -142,9 +154,12 @@ func (m *MessagingClient) Receive(
 	exchangeType string,
 	receiveRoutingKey string, // local app key
 	handlerFunc func(
-		amqp.Delivery,
 		*MessagingClient,
 		IMessagesRegistry,
+		json.RawMessage,
+		string,
+		string,
+		bool,
 	),
 	MessagesRegistryClient IMessagesRegistry,
 ) {
@@ -232,14 +247,18 @@ func (m *MessagingClient) consumeLoop(
 	deliveries <-chan amqp.Delivery,
 	MessagesRegistryClient IMessagesRegistry,
 	handlerFunc func(
-		d amqp.Delivery,
-		mc *MessagingClient,
-		mr IMessagesRegistry,
+		*MessagingClient,
+		IMessagesRegistry,
+		json.RawMessage,
+		string,
+		string,
+		bool,
 	),
 ) {
 	for d := range deliveries {
-		// Invoke the handlerFunc func we passed as parameter.
-		handlerFunc(d, m, MessagesRegistryClient)
+		// Invoke the handlerFunc func we passed as parameter
+		// via handleRefreshEvent
+		handleRefreshEvent(d, m, MessagesRegistryClient, handlerFunc)
 
 		// Update the data on the service's
 		// associated datastore using a local transaction...

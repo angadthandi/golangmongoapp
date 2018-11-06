@@ -106,6 +106,7 @@ func SendMQ(
 		b,
 		MessagesRegistryClient,
 		"",
+		false,
 	)
 
 	log.Debugf("GolangApp Send Page! %s", "send")

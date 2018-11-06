@@ -13,6 +13,7 @@ func DummySendToGoapp(
 	MessagesRegistryClient messages.IMessagesRegistry,
 	sendToRoutingKey string,
 	receivedCorrelationId string,
+	isReplyMessage bool,
 ) {
 	var m struct{ Data string }
 	m.Data = "Products Publish Message!"
@@ -30,6 +31,7 @@ func DummySendToGoapp(
 		b,
 		MessagesRegistryClient,
 		receivedCorrelationId,
+		isReplyMessage,
 	)
 
 	log.Debugf("Products Send Page! %s", "send")

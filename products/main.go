@@ -4,7 +4,6 @@ import (
 	"os"
 
 	"github.com/angadthandi/golangmongoapp/products/config"
-	"github.com/angadthandi/golangmongoapp/products/events"
 	"github.com/angadthandi/golangmongoapp/products/messages"
 
 	log "github.com/sirupsen/logrus"
@@ -51,7 +50,8 @@ func main() {
 		config.ExchangeName,
 		config.ExchangeType,
 		config.ProductsRoutingKey,
-		events.HandleRefreshEvent,
+		// events.HandleRefreshEvent,
+		configureMessageRoutes,
 		MessagesRegistryClient,
 	)
 }
