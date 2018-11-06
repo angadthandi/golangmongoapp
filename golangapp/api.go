@@ -7,7 +7,6 @@ import (
 
 	"github.com/angadthandi/golangmongoapp/golangapp/jsondefinitions"
 	"github.com/angadthandi/golangmongoapp/golangapp/messages"
-	"github.com/angadthandi/golangmongoapp/golangapp/messagesRegistry"
 	"github.com/mongodb/mongo-go-driver/mongo"
 	log "github.com/sirupsen/logrus"
 )
@@ -18,7 +17,7 @@ func api(
 	r *http.Request,
 	dbClient *mongo.Client,
 	MessagingClient messages.IMessagingClient,
-	MessagesRegistryClient messagesRegistry.IMessagesRegistry,
+	MessagesRegistryClient messages.IMessagesRegistry,
 ) {
 	var resp jsondefinitions.GenericAPIResponse
 

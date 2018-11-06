@@ -5,13 +5,12 @@ import (
 
 	"github.com/angadthandi/golangmongoapp/products/config"
 	"github.com/angadthandi/golangmongoapp/products/messages"
-	"github.com/angadthandi/golangmongoapp/products/messagesRegistry"
 	log "github.com/sirupsen/logrus"
 )
 
 func DummySendToGoapp(
 	MessagingClient *messages.MessagingClient,
-	MessagesRegistryClient messagesRegistry.IMessagesRegistry,
+	MessagesRegistryClient messages.IMessagesRegistry,
 	sendToRoutingKey string,
 	receivedCorrelationId string,
 ) {

@@ -8,7 +8,6 @@ import (
 	"github.com/angadthandi/golangmongoapp/golangapp/config"
 	"github.com/angadthandi/golangmongoapp/golangapp/events"
 	"github.com/angadthandi/golangmongoapp/golangapp/messages"
-	"github.com/angadthandi/golangmongoapp/golangapp/messagesRegistry"
 
 	log "github.com/sirupsen/logrus"
 
@@ -21,7 +20,7 @@ var (
 	MessagingClient messages.IMessagingClient
 
 	// Messaging registry client
-	MessagesRegistryClient messagesRegistry.IMessagesRegistry
+	MessagesRegistryClient messages.IMessagesRegistry
 )
 
 // initialize logger
@@ -59,7 +58,7 @@ func main() {
 	defer MessagingClient.Close()
 
 	// initialize message registry map
-	MessagesRegistryClient = &messagesRegistry.MessagesRegistryClient{}
+	MessagesRegistryClient = &messages.MessagesRegistryClient{}
 	MessagesRegistryClient.InitCorrelationMap()
 
 	// start receiver

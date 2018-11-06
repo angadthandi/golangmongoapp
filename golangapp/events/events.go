@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 
 	"github.com/angadthandi/golangmongoapp/golangapp/messages"
-	"github.com/angadthandi/golangmongoapp/golangapp/messagesRegistry"
 	log "github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
 )
@@ -25,7 +24,7 @@ type UpdateToken struct {
 func HandleRefreshEvent(
 	d amqp.Delivery,
 	MessagingClient *messages.MessagingClient,
-	MessagesRegistryClient messagesRegistry.IMessagesRegistry,
+	MessagesRegistryClient messages.IMessagesRegistry,
 ) {
 	body := d.Body
 	consumerTag := d.ConsumerTag
@@ -90,7 +89,7 @@ func HandleRefreshEvent(
 func HandleResponseToExistingMessage(
 	jsonMsg json.RawMessage,
 	MessagingClient *messages.MessagingClient,
-	MessagesRegistryClient messagesRegistry.IMessagesRegistry,
+	MessagesRegistryClient messages.IMessagesRegistry,
 ) {
 	log.Debugf("HandleResponseToExistingMessage")
 	handleMessage(jsonMsg)
@@ -99,7 +98,7 @@ func HandleResponseToExistingMessage(
 func HandleNewMessage(
 	jsonMsg json.RawMessage,
 	MessagingClient *messages.MessagingClient,
-	MessagesRegistryClient messagesRegistry.IMessagesRegistry,
+	MessagesRegistryClient messages.IMessagesRegistry,
 	replyToRoutingKey string,
 	receivedCorrelationId string,
 ) {

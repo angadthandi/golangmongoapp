@@ -1,4 +1,4 @@
-package messagesRegistry
+package messages
 
 import log "github.com/sirupsen/logrus"
 

@@ -4,7 +4,6 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/angadthandi/golangmongoapp/golangapp/messagesRegistry"
 	log "github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
 )
@@ -18,7 +17,7 @@ type IMessagingClient interface {
 		publishRoutingKey string,
 		replyToRoutingKey string,
 		msg []byte,
-		MessagesRegistryClient messagesRegistry.IMessagesRegistry,
+		MessagesRegistryClient IMessagesRegistry,
 		receivedCorrelationId string,
 	)
 	Receive(
@@ -28,9 +27,9 @@ type IMessagingClient interface {
 		handlerFunc func(
 			amqp.Delivery,
 			*MessagingClient,
-			messagesRegistry.IMessagesRegistry,
+			IMessagesRegistry,
 		),
-		MessagesRegistryClient messagesRegistry.IMessagesRegistry,
+		MessagesRegistryClient IMessagesRegistry,
 	)
 	Close()
 }
@@ -77,7 +76,7 @@ func (m *MessagingClient) Send(
 	publishRoutingKey string,
 	replyToRoutingKey string,
 	msg []byte,
-	MessagesRegistryClient messagesRegistry.IMessagesRegistry,
+	MessagesRegistryClient IMessagesRegistry,
 	receivedCorrelationId string,
 ) {
 	ch, err := m.conn.Channel()
@@ -145,9 +144,9 @@ func (m *MessagingClient) Receive(
 	handlerFunc func(
 		amqp.Delivery,
 		*MessagingClient,
-		messagesRegistry.IMessagesRegistry,
+		IMessagesRegistry,
 	),
-	MessagesRegistryClient messagesRegistry.IMessagesRegistry,
+	MessagesRegistryClient IMessagesRegistry,
 ) {
 	log.Debugf("Receiver %v", "Started")
 
@@ -231,11 +230,11 @@ func (m *MessagingClient) Close() {
 
 func (m *MessagingClient) consumeLoop(
 	deliveries <-chan amqp.Delivery,
-	MessagesRegistryClient messagesRegistry.IMessagesRegistry,
+	MessagesRegistryClient IMessagesRegistry,
 	handlerFunc func(
 		d amqp.Delivery,
 		mc *MessagingClient,
-		mr messagesRegistry.IMessagesRegistry,
+		mr IMessagesRegistry,
 	),
 ) {
 	for d := range deliveries {

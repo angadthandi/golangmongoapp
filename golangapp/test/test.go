@@ -8,7 +8,6 @@ import (
 
 	"github.com/angadthandi/golangmongoapp/golangapp/config"
 	"github.com/angadthandi/golangmongoapp/golangapp/messages"
-	"github.com/angadthandi/golangmongoapp/golangapp/messagesRegistry"
 	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/mongo"
 	log "github.com/sirupsen/logrus"
@@ -89,7 +88,7 @@ func SendMQ(
 	w http.ResponseWriter,
 	r *http.Request,
 	MessagingClient messages.IMessagingClient,
-	MessagesRegistryClient messagesRegistry.IMessagesRegistry,
+	MessagesRegistryClient messages.IMessagesRegistry,
 ) {
 	var m struct{ Data string }
 	m.Data = "GoApp Publish Message!"
