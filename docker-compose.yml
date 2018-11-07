@@ -5,22 +5,22 @@ services:
       container_name: golangrabbitmq
       ports:
         - "5672:5672"
-  web:
+  golangapp:
     build: ./golangapp
     container_name: golangapp
     ports:
      - "9002:9002"
     depends_on: 
-      - database
+      - golangapp_database
       - rabbitmq
     # Keep it running.
     tty: true
-  database:
+  golangapp_database:
     image: mongo:4.0
-    container_name: mongodbservice
+    container_name: golangapp_mongodbservice
     command: mongod --port 27016
     volumes:
-      - ./mongodbdata/testdb:/mongodbdata/testdb
+      - ./mongodbdata/golangapp_database:/mongodbdata/golangapp_database
     ports:
      - "27016:27016"
     environment: 
@@ -30,10 +30,21 @@ services:
     build: ./products
     container_name: products
     depends_on: 
-      - database
+      - products_database
       - rabbitmq
     # Keep it running.
     tty: true
+  products_database:
+    image: mongo:4.0
+    container_name: products_mongodbservice
+    command: mongod --port 27018
+    volumes:
+      - ./mongodbdata/products_database:/mongodbdata/products_database
+    ports:
+     - "27018:27018"
+    environment: 
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: password
 
 
 # view container logs

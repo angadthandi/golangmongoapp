@@ -3,6 +3,7 @@ package messages
 import (
 	"encoding/json"
 
+	"github.com/mongodb/mongo-go-driver/mongo"
 	log "github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
 )
@@ -24,6 +25,7 @@ func handleRefreshEvent(
 	d amqp.Delivery,
 	MessagingClient *MessagingClient,
 	MessagesRegistryClient IMessagesRegistry,
+	dbRef *mongo.Database,
 	handlerFunc func(
 		*MessagingClient,
 		IMessagesRegistry,
@@ -31,6 +33,7 @@ func handleRefreshEvent(
 		string,
 		string,
 		bool,
+		*mongo.Database,
 	),
 ) {
 	body := d.Body
@@ -65,6 +68,7 @@ func handleRefreshEvent(
 				"",
 				"",
 				true,
+				dbRef,
 			)
 		} else {
 			log.Debug("HandleRefreshEvent: correlationId not found!")
@@ -79,6 +83,7 @@ func handleRefreshEvent(
 				d.ReplyTo,
 				correlationId,
 				false,
+				dbRef,
 			)
 		}
 	}

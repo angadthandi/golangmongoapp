@@ -5,6 +5,8 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/mongodb/mongo-go-driver/mongo"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
 )
@@ -36,8 +38,10 @@ type IMessagingClient interface {
 			string,
 			string,
 			bool,
+			*mongo.Database,
 		),
 		MessagesRegistryClient IMessagesRegistry,
+		dbRef *mongo.Database,
 	)
 	Close()
 }
@@ -160,8 +164,10 @@ func (m *MessagingClient) Receive(
 		string,
 		string,
 		bool,
+		*mongo.Database,
 	),
 	MessagesRegistryClient IMessagesRegistry,
+	dbRef *mongo.Database,
 ) {
 	log.Debugf("Receiver %v", "Started")
 
@@ -231,7 +237,7 @@ func (m *MessagingClient) Receive(
 
 	forever := make(chan bool)
 
-	go m.consumeLoop(msgs, MessagesRegistryClient, handlerFunc)
+	go m.consumeLoop(msgs, MessagesRegistryClient, dbRef, handlerFunc)
 
 	log.Debugf(" [*] Waiting for messages. To exit press CTRL+C")
 	<-forever
@@ -246,6 +252,7 @@ func (m *MessagingClient) Close() {
 func (m *MessagingClient) consumeLoop(
 	deliveries <-chan amqp.Delivery,
 	MessagesRegistryClient IMessagesRegistry,
+	dbRef *mongo.Database,
 	handlerFunc func(
 		*MessagingClient,
 		IMessagesRegistry,
@@ -253,12 +260,13 @@ func (m *MessagingClient) consumeLoop(
 		string,
 		string,
 		bool,
+		*mongo.Database,
 	),
 ) {
 	for d := range deliveries {
 		// Invoke the handlerFunc func we passed as parameter
 		// via handleRefreshEvent
-		handleRefreshEvent(d, m, MessagesRegistryClient, handlerFunc)
+		handleRefreshEvent(d, m, MessagesRegistryClient, dbRef, handlerFunc)
 
 		// Update the data on the service's
 		// associated datastore using a local transaction...

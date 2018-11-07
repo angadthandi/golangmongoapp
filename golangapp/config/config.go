@@ -5,7 +5,7 @@ const (
 
 	// MongoDB
 	MongoDBPort        = ":27016"
-	MongoDBServiceName = "mongodbservice"
+	MongoDBServiceName = "golangapp_mongodbservice"
 	MongoDBUsername    = "root"
 	MongoDBPassword    = "password"
 
@@ -14,7 +14,7 @@ const (
 	ExchangeType = "direct"
 
 	// Goapp Routing Key
-	GoappRoutingKey = "goapp"
+	GoappRoutingKey = "golangapp"
 
 	// RabbitMQ Products Routing Key
 	ProductsRoutingKey = "product"

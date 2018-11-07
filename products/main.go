@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"os"
 
 	"github.com/angadthandi/golangmongoapp/products/config"
 	"github.com/angadthandi/golangmongoapp/products/messages"
+	"github.com/mongodb/mongo-go-driver/mongo"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -33,6 +35,23 @@ func init() {
 func main() {
 	log.Infof("Started main: %v", "products")
 
+	// connect to products mongodb
+	dbUrl := "mongodb://" +
+		config.MongoDBUsername + ":" +
+		config.MongoDBPassword + "@" +
+		config.MongoDBServiceName +
+		config.MongoDBPort
+	dbClient, err := mongo.Connect(context.Background(), dbUrl, nil)
+	if err != nil {
+		log.Fatalf("mongodb connection error : %v", err)
+	}
+
+	log.Debug("Connected to mongodb products database")
+	defer dbClient.Disconnect(context.Background())
+
+	dbRef := dbClient.Database("ProductsDB")
+	log.Debug("Initialized mongodb products database")
+
 	// connect to RabbitMQ
 	MessagingClient = &messages.MessagingClient{}
 	MessagingClient.Connect()
@@ -50,8 +69,8 @@ func main() {
 		config.ExchangeName,
 		config.ExchangeType,
 		config.ProductsRoutingKey,
-		// events.HandleRefreshEvent,
 		configureMessageRoutes,
 		MessagesRegistryClient,
+		dbRef,
 	)
 }

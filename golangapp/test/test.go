@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/angadthandi/golangmongoapp/golangapp/config"
+	"github.com/angadthandi/golangmongoapp/golangapp/jsondefinitions"
 	"github.com/angadthandi/golangmongoapp/golangapp/messages"
 	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/mongo"
@@ -90,8 +91,10 @@ func SendMQ(
 	MessagingClient messages.IMessagingClient,
 	MessagesRegistryClient messages.IMessagesRegistry,
 ) {
-	var m struct{ Data string }
-	m.Data = "GoApp Publish Message!"
+	// var m struct{ Data string }
+	// m.Data = "GoApp Publish Message!"
+	var m jsondefinitions.GenericMessageSend
+	m.Type = "GetProducts"
 
 	b, err := json.Marshal(m)
 	if err != nil {

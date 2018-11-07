@@ -48,7 +48,11 @@ func main() {
 		log.Fatalf("mongodb connection error : %v", err)
 	}
 
+	log.Debug("Connected to mongodb golangapp database")
 	defer dbClient.Disconnect(context.Background())
+
+	dbRef := dbClient.Database("GolangappDB")
+	log.Debug("Initialized mongodb golangapp database")
 
 	// connect to RabbitMQ
 	MessagingClient = &messages.MessagingClient{}
@@ -67,9 +71,9 @@ func main() {
 		config.ExchangeName,
 		config.ExchangeType,
 		config.GoappRoutingKey,
-		// events.HandleRefreshEvent,
 		configureMessageRoutes,
 		MessagesRegistryClient,
+		dbRef,
 	)
 
 	// configure route handlers
