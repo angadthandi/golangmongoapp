@@ -50,6 +50,8 @@ type Person struct {
 // 	return result.Phone
 // }
 
+// https://medium.com/@wembleyleach/how-to-use-the-official-mongodb-go-driver-9f8aff716fdb
+// https://godoc.org/github.com/mongodb/mongo-go-driver/mongo
 // Test MongoDB Insert/Read with mongo-go-driver/mongo
 func Echo(dbClient *mongo.Client) string {
 	c := dbClient.Database("testdb").Collection("people")

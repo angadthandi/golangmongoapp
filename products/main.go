@@ -11,6 +11,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const ProductsDBName = "productsdb"
+
 var (
 	// RabbitMQ messaging client
 	MessagingClient messages.IMessagingClient
@@ -49,7 +51,7 @@ func main() {
 	log.Debug("Connected to mongodb products database")
 	defer dbClient.Disconnect(context.Background())
 
-	dbRef := dbClient.Database("ProductsDB")
+	dbRef := dbClient.Database(ProductsDBName)
 	log.Debug("Initialized mongodb products database")
 
 	// connect to RabbitMQ

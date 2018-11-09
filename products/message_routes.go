@@ -6,7 +6,7 @@ import (
 	"github.com/mongodb/mongo-go-driver/mongo"
 
 	"github.com/angadthandi/golangmongoapp/products/config"
-	"github.com/angadthandi/golangmongoapp/products/dummySend"
+	"github.com/angadthandi/golangmongoapp/products/controllers"
 	"github.com/angadthandi/golangmongoapp/products/jsondefinitions"
 	"github.com/angadthandi/golangmongoapp/products/messages"
 	log "github.com/sirupsen/logrus"
@@ -60,27 +60,38 @@ func configureMessageRoutes(
 
 		// Handle New Incoming Message Switch Cases
 
+		var resp interface{}
+
 		log.Debugf(`products configureMessageRoutes:
 		msg.Type %v`, msg.Type)
 		switch msg.Type {
 		case "GetProducts":
-			dummySend.DummySendToGoapp(
-				MessagingClient,
-				MessagesRegistryClient,
-				replyToRoutingKey,
-				receivedCorrelationId,
-				isReplyMessage,
-			)
+			// Add Product for Testing GetProducts
+			// controllers.CreateProduct(
+			// 	dbRef,
+			// 	"Test Product 1",
+			// 	"Test Product Code 1",
+			// )
+			resp = controllers.GetProducts(dbRef)
 
 		default:
-			SendSuccessResponse(
-				MessagesRegistryClient,
-				replyToRoutingKey,
-				receivedCorrelationId,
-				isReplyMessage,
-				"Invalid Message Type",
-			)
+			resp = "Invalid Message Type"
 		}
+
+		SendSuccessResponse(
+			MessagesRegistryClient,
+			replyToRoutingKey,
+			receivedCorrelationId,
+			isReplyMessage,
+			resp,
+		)
+		// dummySend.DummySendToGoapp(
+		// 	MessagingClient,
+		// 	MessagesRegistryClient,
+		// 	replyToRoutingKey,
+		// 	receivedCorrelationId,
+		// 	isReplyMessage,
+		// )
 	}
 }
 
