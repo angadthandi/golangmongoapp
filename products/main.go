@@ -74,5 +74,6 @@ func main() {
 		configureMessageRoutes,
 		MessagesRegistryClient,
 		dbRef,
+		nil,
 	)
 }

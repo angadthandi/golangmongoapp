@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/angadthandi/golangmongoapp/golangapp/config"
+	"github.com/angadthandi/golangmongoapp/golangapp/goappsocket"
 	"github.com/angadthandi/golangmongoapp/golangapp/messages"
 
 	log "github.com/sirupsen/logrus"
@@ -64,6 +65,23 @@ func main() {
 	MessagesRegistryClient = &messages.MessagesRegistryClient{}
 	MessagesRegistryClient.InitCorrelationMap()
 
+	// start hub
+	// for creating websocket conns
+	//
+	// pass this hub to the message Receiver
+	// so we can send responses from other services
+	// to the websocket
+	hub := goappsocket.NewHub()
+	go hub.Run()
+
+	// configure route handlers
+	configureRoutes(
+		dbClient,
+		hub,
+		MessagingClient,
+		MessagesRegistryClient,
+	)
+
 	// start receiver
 	// listen to messages from RabbitMQ
 	// sent by other micro services
@@ -74,10 +92,8 @@ func main() {
 		configureMessageRoutes,
 		MessagesRegistryClient,
 		dbRef,
+		hub,
 	)
-
-	// configure route handlers
-	configureRoutes(dbClient)
 
 	log.Printf("Listening on Port: %v", config.ServerPort)
 	// start http web server

@@ -21,6 +21,7 @@ func configureMessageRoutes(
 	receivedCorrelationId string,
 	isResponseToExistingMessage bool,
 	dbRef *mongo.Database,
+	writeReplyTo interface{}, // write reply to http/ws
 ) {
 	log.Debugf(`products configureMessageRoutes:
 	jsonMsg: %v, replyToRoutingKey: %v,

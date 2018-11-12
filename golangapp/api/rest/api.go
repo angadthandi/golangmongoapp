@@ -1,4 +1,4 @@
-package main
+package rest
 
 import (
 	"encoding/json"
@@ -11,8 +11,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// handler for API
-func api(
+// handler for rest/API
+func API(
 	w http.ResponseWriter,
 	r *http.Request,
 	dbClient *mongo.Client,
@@ -27,15 +27,19 @@ func api(
 
 	b, err := json.Marshal(resp)
 	if err != nil {
-		log.Errorf("API JSON Marshal error: %v", err)
+		log.Errorf("rest/API JSON Marshal error: %v", err)
 		return
 	}
 
-	log.Debugf("API JSON Response: %v", string(b))
-	fmt.Fprintf(w, "API JSON Response: %v", string(b))
+	log.Debugf("rest/API JSON Response: %v", string(b))
+	fmt.Fprintf(w, "rest/API JSON Response: %v", string(b))
 }
 
 // handler for home
-func home(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Home Page! %s", r.URL.Path[1:])
+func Home(w http.ResponseWriter, r *http.Request) {
+	// fmt.Fprintf(w, "Home Page! %s", r.URL.Path[1:])
+
+	log.Debug("Home Page!")
+	http.FileServer(http.Dir("./public/home.html"))
+	// http.FileServer(http.Dir("./vendor/home.html"))
 }

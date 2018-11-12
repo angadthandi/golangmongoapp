@@ -39,9 +39,11 @@ type IMessagingClient interface {
 			string,
 			bool,
 			*mongo.Database,
+			interface{},
 		),
 		MessagesRegistryClient IMessagesRegistry,
 		dbRef *mongo.Database,
+		writeReplyTo interface{}, // write reply to http/ws
 	)
 	Close()
 }
@@ -165,9 +167,11 @@ func (m *MessagingClient) Receive(
 		string,
 		bool,
 		*mongo.Database,
+		interface{},
 	),
 	MessagesRegistryClient IMessagesRegistry,
 	dbRef *mongo.Database,
+	writeReplyTo interface{}, // write reply to http/ws
 ) {
 	log.Debugf("Receiver %v", "Started")
 
@@ -237,7 +241,13 @@ func (m *MessagingClient) Receive(
 
 	forever := make(chan bool)
 
-	go m.consumeLoop(msgs, MessagesRegistryClient, dbRef, handlerFunc)
+	go m.consumeLoop(
+		msgs,
+		MessagesRegistryClient,
+		dbRef,
+		writeReplyTo,
+		handlerFunc,
+	)
 
 	log.Debugf(" [*] Waiting for messages. To exit press CTRL+C")
 	<-forever
@@ -253,6 +263,7 @@ func (m *MessagingClient) consumeLoop(
 	deliveries <-chan amqp.Delivery,
 	MessagesRegistryClient IMessagesRegistry,
 	dbRef *mongo.Database,
+	writeReplyTo interface{}, // write reply to http/ws
 	handlerFunc func(
 		*MessagingClient,
 		IMessagesRegistry,
@@ -261,12 +272,20 @@ func (m *MessagingClient) consumeLoop(
 		string,
 		bool,
 		*mongo.Database,
+		interface{},
 	),
 ) {
 	for d := range deliveries {
 		// Invoke the handlerFunc func we passed as parameter
 		// via handleRefreshEvent
-		handleRefreshEvent(d, m, MessagesRegistryClient, dbRef, handlerFunc)
+		handleRefreshEvent(
+			d,
+			m,
+			MessagesRegistryClient,
+			dbRef,
+			writeReplyTo,
+			handlerFunc,
+		)
 
 		// Update the data on the service's
 		// associated datastore using a local transaction...

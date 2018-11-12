@@ -10,6 +10,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+type IWriteReplyTo interface {
+	SendMsgToAllClients(jsonMsg json.RawMessage)
+}
+
 // configure RabbitMQ Message Routes
 func configureMessageRoutes(
 	MessagingClient *messages.MessagingClient,
@@ -19,6 +23,7 @@ func configureMessageRoutes(
 	receivedCorrelationId string,
 	isResponseToExistingMessage bool,
 	dbRef *mongo.Database,
+	writeReplyTo interface{}, // write reply to http/ws
 ) {
 	log.Debugf(`golangapp configureMessageRoutes:
 	jsonMsg: %v, replyToRoutingKey: %v,
@@ -40,7 +45,7 @@ func configureMessageRoutes(
 
 	err := json.Unmarshal(jsonMsg, &msg)
 	if err != nil {
-		log.Errorf(`products configureMessageRoutes:
+		log.Errorf(`golangapp configureMessageRoutes:
 			unable to unmarshal json: %v`, err)
 
 		SendErrorResponse(
@@ -52,10 +57,45 @@ func configureMessageRoutes(
 		return
 	}
 
+	var resp interface{}
+
 	if isResponseToExistingMessage {
 		// Handle Response to Sent Message Switch Cases
+
+		log.Debugf(`golangapp configureMessageRoutes:
+		msg.Type %v`, msg.Type)
+		log.Debugf(`golangapp configureMessageRoutes:
+		msg.Message %v`, msg.Message)
+		switch msg.Type {
+		case "GetProducts":
+			resp = msg.Message
+
+		default:
+			resp = msg.Message
+		}
 	} else {
 		// Handle New Incoming Message Switch Cases
+	}
+
+	// write response messages to
+	// WS
+	log.Debugf("golangapp configureMessageRoutes resp: %v", resp)
+
+	if writeReplyTo != nil {
+		i, ok := writeReplyTo.(IWriteReplyTo)
+		if !ok {
+			log.Errorf(`golangapp configureMessageRoutes invalid
+			writeReplyTo: %v, of Type: %T`, resp, resp)
+			return
+		}
+
+		iResp, ok := resp.(json.RawMessage)
+		if !ok {
+			log.Errorf(`golangapp configureMessageRoutes invalid
+			iResp: %v, of Type: %T`, iResp, iResp)
+			return
+		}
+		i.SendMsgToAllClients(iResp)
 	}
 }
 
