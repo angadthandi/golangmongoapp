@@ -12,6 +12,10 @@ import (
 
 type IWriteReplyTo interface {
 	SendMsgToAllClients(jsonMsg json.RawMessage)
+	SendMsgToClientWithCorrelationId(
+		jsonMsg json.RawMessage,
+		correlationId string,
+	)
 }
 
 // configure RabbitMQ Message Routes
@@ -95,7 +99,17 @@ func configureMessageRoutes(
 			iResp: %v, of Type: %T`, iResp, iResp)
 			return
 		}
+
+		// send to all connected clients
 		i.SendMsgToAllClients(iResp)
+
+		// TODO
+		// // send to client with correlationId
+		// // in client's clientCorrelationIds map
+		// i.SendMsgToClientWithCorrelationId(
+		// 	iResp,
+		// 	receivedCorrelationId,
+		// )
 	}
 }
 

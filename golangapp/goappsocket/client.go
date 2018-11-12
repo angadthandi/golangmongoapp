@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/angadthandi/golangmongoapp/golangapp/messages"
@@ -48,7 +49,8 @@ type Client struct {
 	send chan []byte
 
 	// map of client correlationIds
-	clientCorrelationIds map[string]bool
+	clientCorrelationIds     map[string]bool
+	clientCorrelationIdsLock sync.RWMutex
 }
 
 // SendMessageOnHub sends received message from client
@@ -57,6 +59,18 @@ func (c *Client) SendMessageOnHub(jsonMsg json.RawMessage) {
 	log.Debugf("client SendMessageOnHub c: %v", c)
 	log.Debugf("client SendMessageOnHub jsonMsg: %v", jsonMsg)
 	c.Hub.broadcast <- jsonMsg
+}
+
+// SetClientCorrelationId sets correlationId for client
+// in clientCorrelationIds map
+func (c *Client) SetClientCorrelationId(correlationId string) {
+	log.Debugf("client SetClientCorrelationId c: %v", c)
+	log.Debugf("client SetClientCorrelationId correlationId: %v",
+		correlationId)
+
+	c.clientCorrelationIdsLock.Lock()
+	c.clientCorrelationIds[correlationId] = true
+	c.clientCorrelationIdsLock.Unlock()
 }
 
 // readPump pumps messages from the websocket connection to the hub.

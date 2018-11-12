@@ -18,11 +18,16 @@ type Clienter interface {
 	)
 	WritePump()
 	SendMessageOnHub(jsonMsg json.RawMessage)
+	SetClientCorrelationId(correlationId string)
 }
 
 type Huber interface {
 	Run()
 	SendMsgToAllClients(jsonMsg json.RawMessage)
+	SendMsgToClientWithCorrelationId(
+		jsonMsg json.RawMessage,
+		correlationId string,
+	)
 }
 
 // handler for ws/API
@@ -43,8 +48,16 @@ func ClientAPI(
 		jsonMsg,
 	)
 
+	// handle message from client
+
+	// TODO
+	// when sending message from client
+	// to another microservice,
+	// set correlationId in client's
+	// clientCorrelationIds map
+
+	// send message to all clients on hub
 	c.SendMessageOnHub(respMsg)
-	// log.Debugf("ws RegistryClient client Hub: %v", c.Hub)
 }
 
 // handler for ws/API

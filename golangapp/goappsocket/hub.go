@@ -58,10 +58,38 @@ func (h *Hub) Run() {
 	}
 }
 
+// SendMsgToAllClients sends message to
+// all connected clients
 func (h *Hub) SendMsgToAllClients(
 	jsonMsg json.RawMessage,
 ) {
 	log.Debugf("hub SendMsgToAllClients h: %v", h)
 	log.Debugf("hub SendMsgToAllClients jsonMsg: %v", jsonMsg)
 	h.broadcast <- jsonMsg
+}
+
+// SendMsgToClientWithCorrelationId sends message to
+// client which has matching correlationId in its
+// clientCorrelationIds
+func (h *Hub) SendMsgToClientWithCorrelationId(
+	jsonMsg json.RawMessage,
+	correlationId string,
+) {
+	log.Debugf("hub SendMsgToClientWithCorrelationId h: %v", h)
+	log.Debugf("hub SendMsgToClientWithCorrelationId jsonMsg: %v",
+		jsonMsg)
+	log.Debugf("hub SendMsgToClientWithCorrelationId correlationId: %v",
+		correlationId)
+
+	for c, _ := range h.clients {
+		if _, ok := c.clientCorrelationIds[correlationId]; ok {
+			c.send <- jsonMsg
+
+			c.clientCorrelationIdsLock.Lock()
+			delete(c.clientCorrelationIds, correlationId)
+			c.clientCorrelationIdsLock.Unlock()
+
+			break
+		}
+	}
 }
