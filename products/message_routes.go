@@ -85,6 +85,7 @@ func configureMessageRoutes(
 			receivedCorrelationId,
 			isReplyMessage,
 			resp,
+			msg.Type,
 		)
 		// dummySend.DummySendToGoapp(
 		// 	MessagingClient,
@@ -102,9 +103,10 @@ func SendSuccessResponse(
 	receivedCorrelationId string,
 	isReplyMessage bool,
 	responseMessage interface{},
+	responseType string,
 ) {
 	var msg jsondefinitions.GenericMessageSend
-	msg.Type = "Success"
+	msg.Type = responseType //"Success"
 	msg.Message = responseMessage
 
 	b, err := json.Marshal(msg)

@@ -51,6 +51,9 @@ type Client struct {
 	// map of client correlationIds
 	clientCorrelationIds     map[string]bool
 	clientCorrelationIdsLock sync.RWMutex
+
+	// Buffered channel of inbound messages.
+	ChClientCorrelationIds chan string
 }
 
 // SendMessageOnHub sends received message from client
@@ -110,6 +113,7 @@ func (c *Client) ReadPump(
 			MessagingClient,
 			MessagesRegistryClient,
 			message,
+			c.ChClientCorrelationIds,
 		)
 	}
 }
@@ -157,6 +161,10 @@ func (c *Client) WritePump() {
 			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				return
 			}
+		case correlationId, ok := <-c.ChClientCorrelationIds:
+			if ok {
+				c.SetClientCorrelationId(correlationId)
+			}
 		}
 	}
 }
@@ -176,10 +184,11 @@ func ServeWs(
 		return
 	}
 	client := &Client{
-		Hub:                  hub,
-		conn:                 conn,
-		send:                 make(chan []byte, 256),
-		clientCorrelationIds: make(map[string]bool),
+		Hub:                    hub,
+		conn:                   conn,
+		send:                   make(chan []byte, 256),
+		clientCorrelationIds:   make(map[string]bool),
+		ChClientCorrelationIds: make(chan string),
 	}
 	client.Hub.register <- client
 

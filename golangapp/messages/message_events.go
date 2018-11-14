@@ -68,7 +68,16 @@ func handleRefreshEvent(
 				MessagesRegistryClient,
 				d.Body,
 				"",
-				"",
+
+				// for handling ws, we need to add correlationId here
+				// we can add it to send to the func
+				// so ws can be replied
+				//
+				// The reply is already being detected by
+				// the next param: isResponseToExistingMessage
+				// so adding this should be safe
+				correlationId, //"",
+
 				true,
 				dbRef,
 				writeReplyTo,

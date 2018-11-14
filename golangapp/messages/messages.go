@@ -26,7 +26,7 @@ type IMessagingClient interface {
 		// should be set to "false" to register message,
 		// based on correlationId match found or not
 		isReplyMessage bool,
-	)
+	) (correlationId string)
 	Receive(
 		exchangeName string,
 		exchangeType string,
@@ -93,11 +93,11 @@ func (m *MessagingClient) Send(
 	MessagesRegistryClient IMessagesRegistry,
 	receivedCorrelationId string,
 	isReplyMessage bool,
-) {
+) string {
 	ch, err := m.conn.Channel()
 	if err != nil {
 		log.Errorf("Failed to open a channel: %v", err)
-		return
+		return ""
 	}
 	defer ch.Close()
 
@@ -112,7 +112,7 @@ func (m *MessagingClient) Send(
 	)
 	if err != nil {
 		log.Errorf("Failed to declare a exchange: %v", err)
-		return
+		return ""
 	}
 
 	correlationId := randomString(32)
@@ -140,7 +140,7 @@ func (m *MessagingClient) Send(
 	log.Debugf(" [x] Sent Message: %s", msg)
 	if err != nil {
 		log.Errorf("Failed to publish a message: %v", err)
-		return
+		return ""
 	}
 
 	// register sent message only if NOT a reply
@@ -152,7 +152,12 @@ func (m *MessagingClient) Send(
 		MessagesRegistryClient.SetCorrelationMapData(
 			correlationId, publishRoutingKey, publishRoutingKey,
 		)
+
+		// return correlationId only if sent message, NOT a reply
+		return correlationId
 	}
+
+	return ""
 }
 
 func (m *MessagingClient) Receive(

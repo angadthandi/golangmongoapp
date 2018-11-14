@@ -10,6 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// IWriteReplyTo mocks Hub based on implemented funcs
 type IWriteReplyTo interface {
 	SendMsgToAllClients(jsonMsg json.RawMessage)
 	SendMsgToClientWithCorrelationId(
@@ -61,7 +62,17 @@ func configureMessageRoutes(
 		return
 	}
 
-	var resp interface{}
+	var (
+		resp interface{}
+
+		// set this based on incoming Type
+		// in the switch statement
+		//
+		// for some cases, we might need to
+		// send message to all clients
+		// for other cases, send to specific client
+		sendMsgToAllClients bool
+	)
 
 	if isResponseToExistingMessage {
 		// Handle Response to Sent Message Switch Cases
@@ -73,12 +84,17 @@ func configureMessageRoutes(
 		switch msg.Type {
 		case "GetProducts":
 			resp = msg.Message
+			sendMsgToAllClients = false
 
 		default:
 			resp = msg.Message
+			sendMsgToAllClients = true
 		}
 	} else {
 		// Handle New Incoming Message Switch Cases
+
+		// As this app is the API Gateway
+		// we might not need any cases here
 	}
 
 	// write response messages to
@@ -100,16 +116,21 @@ func configureMessageRoutes(
 			return
 		}
 
-		// send to all connected clients
-		i.SendMsgToAllClients(iResp)
-
-		// TODO
-		// // send to client with correlationId
-		// // in client's clientCorrelationIds map
-		// i.SendMsgToClientWithCorrelationId(
-		// 	iResp,
-		// 	receivedCorrelationId,
-		// )
+		if sendMsgToAllClients {
+			log.Debug(`golangapp configureMessageRoutes
+			 SendMsgToAllClients`)
+			// send to all connected clients
+			i.SendMsgToAllClients(iResp)
+		} else {
+			log.Debug(`golangapp configureMessageRoutes
+			 SendMsgToClientWithCorrelationId`)
+			// send to client with correlationId
+			// in client's clientCorrelationIds map
+			i.SendMsgToClientWithCorrelationId(
+				iResp,
+				receivedCorrelationId,
+			)
+		}
 	}
 }
 
@@ -119,9 +140,10 @@ func SendSuccessResponse(
 	receivedCorrelationId string,
 	isReplyMessage bool,
 	responseMessage interface{},
+	responseType string,
 ) {
 	var msg jsondefinitions.GenericMessageSend
-	msg.Type = "Success"
+	msg.Type = responseType //"Success"
 	msg.Message = responseMessage
 
 	b, err := json.Marshal(msg)

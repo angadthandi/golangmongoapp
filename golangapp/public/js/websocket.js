@@ -2,6 +2,20 @@ window.onload = function () {
     var conn;
     var msg = document.getElementById("msg");
     var log = document.getElementById("log");
+    document.getElementById("getProductsBtn").onclick = function () {
+        console.log("getProductsBtn");
+        var messageObj = {
+            api: "GetProducts",
+            message: {
+                data: null
+            }
+        };
+
+        console.log(messageObj);
+        var jsonMsg = JSON.stringify(messageObj);
+        console.log(jsonMsg);
+        conn.send(jsonMsg);
+    };
     function appendLog(item) {
         var doScroll = log.scrollTop > log.scrollHeight - log.clientHeight - 1;
         log.appendChild(item);
@@ -18,7 +32,8 @@ window.onload = function () {
         }
 
         var msgObj = {
-            api: "GetProducts",
+            // api: "GetProducts",
+            api: "Default",
             message: {
                 data: msg.value
             }

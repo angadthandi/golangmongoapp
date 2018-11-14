@@ -19,6 +19,7 @@ func ClientRegistry(
 	MessagingClient messages.IMessagingClient,
 	MessagesRegistryClient messages.IMessagesRegistry,
 	jsonMsg json.RawMessage,
+	ChClientCorrelationIds chan<- string,
 ) {
 	log.Debugf("registry ClientRegistry")
 	ws.ClientAPI(
@@ -27,6 +28,7 @@ func ClientRegistry(
 		MessagingClient,
 		MessagesRegistryClient,
 		jsonMsg,
+		ChClientCorrelationIds,
 	)
 }
 

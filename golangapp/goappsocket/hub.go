@@ -81,6 +81,10 @@ func (h *Hub) SendMsgToClientWithCorrelationId(
 	log.Debugf("hub SendMsgToClientWithCorrelationId correlationId: %v",
 		correlationId)
 
+	if correlationId == "" {
+		return
+	}
+
 	for c, _ := range h.clients {
 		if _, ok := c.clientCorrelationIds[correlationId]; ok {
 			c.send <- jsonMsg

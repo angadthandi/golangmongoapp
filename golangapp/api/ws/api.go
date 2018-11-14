@@ -3,6 +3,7 @@ package ws
 import (
 	"encoding/json"
 
+	"github.com/angadthandi/golangmongoapp/golangapp/config"
 	"github.com/angadthandi/golangmongoapp/golangapp/jsondefinitions"
 	"github.com/angadthandi/golangmongoapp/golangapp/messages"
 	"github.com/mongodb/mongo-go-driver/mongo"
@@ -37,27 +38,27 @@ func ClientAPI(
 	MessagingClient messages.IMessagingClient,
 	MessagesRegistryClient messages.IMessagesRegistry,
 	jsonMsg json.RawMessage,
+	ChClientCorrelationIds chan<- string,
 ) {
 	log.Debugf("ws ClientAPI client Type: %T\n", c)
 	log.Debugf("ws ClientAPI client: %v\n", c)
 
-	respMsg := API(
+	respMsg, correlationId := API(
 		dbClient,
 		MessagingClient,
 		MessagesRegistryClient,
 		jsonMsg,
 	)
+	log.Debugf("ws ClientAPI respMsg: %v\n", respMsg)
+	log.Debugf("ws ClientAPI correlationId: %v\n", correlationId)
 
-	// handle message from client
-
-	// TODO
-	// when sending message from client
-	// to another microservice,
-	// set correlationId in client's
-	// clientCorrelationIds map
-
-	// send message to all clients on hub
-	c.SendMessageOnHub(respMsg)
+	if correlationId != "" {
+		// c.SetClientCorrelationId(correlationId)
+		ChClientCorrelationIds <- correlationId
+	} else {
+		// send message to all clients on hub
+		c.SendMessageOnHub(respMsg)
+	}
 }
 
 // handler for ws/API
@@ -71,12 +72,13 @@ func HubAPI(
 	log.Debugf("ws HubAPI hub Type: %T\n", h)
 	log.Debugf("ws HubAPI hub: %v\n", h)
 
-	respMsg := API(
+	respMsg, correlationId := API(
 		dbClient,
 		MessagingClient,
 		MessagesRegistryClient,
 		jsonMsg,
 	)
+	log.Debugf("ws HubAPI correlationId: %v\n", correlationId)
 
 	h.SendMsgToAllClients(respMsg)
 	// log.Debugf("ws RegistryClient client Hub: %v", c.Hub)
@@ -88,12 +90,29 @@ func API(
 	MessagingClient messages.IMessagingClient,
 	MessagesRegistryClient messages.IMessagesRegistry,
 	jsonMsg json.RawMessage,
-) json.RawMessage {
+) (json.RawMessage, string) {
 	var msg jsondefinitions.GenericAPIRecieve
 	err := json.Unmarshal(jsonMsg, &msg)
 	if err != nil {
 		log.Errorf("ws/API JSON Unmarshal error: %v", err)
-		return nil
+		return nil, ""
+	}
+
+	var correlationId string
+	log.Debugf("ws/API msg.Api: %v", msg.Api)
+	switch msg.Api {
+	case "GetProducts":
+		// get data from products service
+		correlationId = sendToMessageQueue(
+			MessagingClient,
+			MessagesRegistryClient,
+			config.ProductsRoutingKey,
+			msg.Api,
+			msg.Message,
+		)
+
+	default:
+		correlationId = ""
 	}
 
 	var resp jsondefinitions.GenericAPIResponse
@@ -105,9 +124,39 @@ func API(
 	b, err := json.Marshal(resp)
 	if err != nil {
 		log.Errorf("ws/API JSON Marshal error: %v", err)
-		return nil
+		return nil, ""
 	}
 
 	log.Debugf("ws/API JSON Response: %v", string(b))
-	return b
+	return b, correlationId
+}
+
+func sendToMessageQueue(
+	MessagingClient messages.IMessagingClient,
+	MessagesRegistryClient messages.IMessagesRegistry,
+	publishRoutingKey string,
+	msgType string,
+	msgData interface{},
+) string {
+	var m jsondefinitions.GenericMessageSend
+	m.Type = msgType
+	m.Message = msgData
+
+	b, err := json.Marshal(m)
+	if err != nil {
+		log.Errorf("sendToMessageQueue unable to marshal: %v", err)
+	}
+
+	correlationId := MessagingClient.Send(
+		config.ExchangeName,
+		config.ExchangeType,
+		publishRoutingKey, //config.ProductsRoutingKey,
+		config.GoappRoutingKey,
+		b,
+		MessagesRegistryClient,
+		"",
+		false,
+	)
+
+	return correlationId
 }
