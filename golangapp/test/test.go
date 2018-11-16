@@ -9,9 +9,11 @@ import (
 	"github.com/angadthandi/golangmongoapp/golangapp/config"
 	"github.com/angadthandi/golangmongoapp/golangapp/jsondefinitions"
 	"github.com/angadthandi/golangmongoapp/golangapp/messages"
+
 	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/mongo"
 	log "github.com/sirupsen/logrus"
+	// "github.com/mongodb/mongo-go-driver/tree/master/bson"
 )
 
 type Person struct {
@@ -55,31 +57,59 @@ type Person struct {
 // Test MongoDB Insert/Read with mongo-go-driver/mongo
 func Echo(dbClient *mongo.Client) string {
 	c := dbClient.Database("testdb").Collection("people")
-	p := Person{
-		// OID:   objectid.New(),
-		Name:  "Alex",
-		Phone: "+55 89 9556 9111",
-	}
+	// p := Person{
+	// 	// OID:   objectid.New(),
+	// 	Name:  "Alex",
+	// 	Phone: "+55 89 9556 9111",
+	// }
+	// _, err := c.InsertOne(
+	// 	context.Background(),
+	// 	p,
+	// )
+
 	_, err := c.InsertOne(
 		context.Background(),
-		p,
+		bson.D{
+			{Key: "Name", Value: "Alex"},
+			{Key: "Phone", Value: "+55 89 9556 9111"},
+		},
 	)
 
 	if err != nil {
 		log.Errorf("Echo Collection Insert error: %v", err)
 	}
 
-	ret := bson.NewDocument()
-	filter := bson.NewDocument(bson.EC.String("Name", "Alex"))
-	err = c.FindOne(context.Background(), filter).Decode(ret)
+	// ret := bson.NewDocument()
+	// filter := bson.NewDocument(bson.EC.String("Name", "Alex"))
+	// err = c.FindOne(context.Background(), filter).Decode(ret)
+	ret := bson.D{}
+	filter := bson.D{
+		{Key: "Name", Value: "Alex"},
+	}
+	err = c.FindOne(context.Background(), filter).Decode(&ret)
 	if err != nil {
 		log.Errorf("Echo Document Find error: %v", err)
 	}
 
 	log.Debugf("Echo Document decoded Result: %v", ret)
 	var person Person
-	person.Name = ret.Lookup("Name").StringValue()
-	person.Phone = ret.Lookup("Phone").StringValue()
+
+	// person.Name = ret.Lookup("Name").StringValue()
+	// person.Phone = ret.Lookup("Phone").StringValue()
+
+	retMap := ret.Map()
+	log.Debugf("Echo retMap: %v", retMap)
+
+	name, ok := retMap["Name"].(string)
+	if ok {
+		person.Name = name
+	}
+	phone, ok := retMap["Phone"].(string)
+	if ok {
+		person.Phone = phone
+	}
+	log.Debugf("Echo person.Name: %v", person.Name)
+	log.Debugf("Echo person.Phone: %v", person.Phone)
 
 	return person.Phone
 }

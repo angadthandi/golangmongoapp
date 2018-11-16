@@ -85,15 +85,31 @@ func (h *Hub) SendMsgToClientWithCorrelationId(
 		return
 	}
 
+	mClientCorrelationIdsToDelete := make(map[*Client]string)
+
 	for c, _ := range h.clients {
+		c.clientCorrelationIdsLock.RLock()
 		if _, ok := c.clientCorrelationIds[correlationId]; ok {
 			c.send <- jsonMsg
 
+			// c.clientCorrelationIdsLock.Lock()
+			// delete(c.clientCorrelationIds, correlationId)
+			// c.clientCorrelationIdsLock.Unlock()
+
+			mClientCorrelationIdsToDelete[c] = correlationId
+
+			c.clientCorrelationIdsLock.RUnlock()
+			break
+		}
+		c.clientCorrelationIdsLock.RUnlock()
+	}
+
+	// delete correlationId from client map
+	if len(mClientCorrelationIdsToDelete) > 0 {
+		for c, correlationId := range mClientCorrelationIdsToDelete {
 			c.clientCorrelationIdsLock.Lock()
 			delete(c.clientCorrelationIds, correlationId)
 			c.clientCorrelationIdsLock.Unlock()
-
-			break
 		}
 	}
 }

@@ -35,20 +35,45 @@ func DBGetProducts(
 	var products []ProductFields
 
 	for cur.Next(context.Background()) {
-		elem := bson.NewDocument()
-		err := cur.Decode(elem)
+		// elem := bson.NewDocument()
+		// err := cur.Decode(elem)
+
+		elem := bson.D{}
+		err := cur.Decode(&elem)
 		if err != nil {
 			log.Errorf("DBGetProducts Decode error: %v", err)
 			return nil
 		}
+
 		// do something with elem....
-		log.Debugf("DBGetProducts elem: %v", elem)
-		// 	CreatedAt:   elem.Lookup("createdAt").DateTime().UTC(),
-		p := ProductFields{
-			// lookup for mongodb bson alias names
-			ProductID:   elem.Lookup("_id").ObjectID().Hex(),
-			ProductName: elem.Lookup("productname").StringValue(),
-			ProductCode: elem.Lookup("productcode").StringValue(),
+		// log.Debugf("DBGetProducts elem: %v", elem)
+		// // 	CreatedAt:   elem.Lookup("createdAt").DateTime().UTC(),
+		// p := ProductFields{
+		// 	// lookup for mongodb bson alias names
+		// 	ProductID:   elem.Lookup("_id").ObjectID().Hex(),
+		// 	ProductName: elem.Lookup("productname").StringValue(),
+		// 	ProductCode: elem.Lookup("productcode").StringValue(),
+		// }
+
+		// // append struct items to slice of structs
+		// products = append(products, p)
+
+		var p ProductFields
+
+		pMap := elem.Map()
+		log.Debugf("DBGetProducts pMap: %v", pMap)
+
+		ProductID, ok := pMap["_id"].(string)
+		if ok {
+			p.ProductID = ProductID
+		}
+		ProductName, ok := pMap["productname"].(string)
+		if ok {
+			p.ProductName = ProductName
+		}
+		ProductCode, ok := pMap["productcode"].(string)
+		if ok {
+			p.ProductCode = ProductCode
 		}
 
 		// append struct items to slice of structs
@@ -72,18 +97,27 @@ func DBCreateProduct(
 	log.Debug("models CreateProduct")
 	// p := ProductFields{
 	// 	ProductID:   objectid.New(),
-	var p struct {
-		ProductName string
-		ProductCode string
-	}
-	p.ProductName = ProductName
-	p.ProductCode = ProductCode
+
+	// var p struct {
+	// 	ProductName string
+	// 	ProductCode string
+	// }
+	// p.ProductName = ProductName
+	// p.ProductCode = ProductCode
 
 	c := dbRef.Collection(ProductsTableName)
 
+	// res, err := c.InsertOne(
+	// 	context.Background(),
+	// 	p,
+	// )
+
 	res, err := c.InsertOne(
 		context.Background(),
-		p,
+		bson.D{
+			{Key: "productname", Value: ProductName},
+			{Key: "productcode", Value: ProductCode},
+		},
 	)
 
 	if err != nil {
