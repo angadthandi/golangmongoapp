@@ -13,10 +13,6 @@ import (
 // IWriteReplyTo mocks Hub based on implemented funcs
 type IWriteReplyTo interface {
 	SendMsgToAllClients(jsonMsg json.RawMessage)
-	SendMsgToClientWithCorrelationId(
-		jsonMsg json.RawMessage,
-		correlationId string,
-	)
 }
 
 // configure RabbitMQ Message Routes
@@ -29,6 +25,7 @@ func configureMessageRoutes(
 	isResponseToExistingMessage bool,
 	dbRef *mongo.Database,
 	writeReplyTo interface{}, // write reply to http/ws
+	hubCh chan []byte,
 ) {
 	log.Debugf(`golangapp configureMessageRoutes:
 	jsonMsg: %v, replyToRoutingKey: %v,
@@ -126,10 +123,28 @@ func configureMessageRoutes(
 			 SendMsgToClientWithCorrelationId`)
 			// send to client with correlationId
 			// in client's clientCorrelationIds map
-			i.SendMsgToClientWithCorrelationId(
-				iResp,
-				receivedCorrelationId,
-			)
+
+			if hubCh == nil {
+				log.Debug(`golangapp configureMessageRoutes
+					 nil hubCh`)
+				return
+			}
+
+			var chMsg jsondefinitions.MicroServiceResponseMsgForHub
+
+			chMsg.CorrelationId = receivedCorrelationId
+			chMsg.ReceivedJsonMsg = iResp
+			log.Debugf("configureMessageRoutes send on hubCh chMsg: %v",
+				chMsg)
+
+			b, err := json.Marshal(chMsg)
+			if err != nil {
+				log.Errorf("configureMessageRoutes unable to marshal: %v",
+					err)
+				return
+			}
+
+			hubCh <- b
 		}
 	}
 }
@@ -143,7 +158,7 @@ func SendSuccessResponse(
 	responseType string,
 ) {
 	var msg jsondefinitions.GenericMessageSend
-	msg.Type = responseType //"Success"
+	msg.Type = responseType
 	msg.Message = responseMessage
 
 	b, err := json.Marshal(msg)

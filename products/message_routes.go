@@ -22,6 +22,7 @@ func configureMessageRoutes(
 	isResponseToExistingMessage bool,
 	dbRef *mongo.Database,
 	writeReplyTo interface{}, // write reply to http/ws
+	hubCh chan []byte,
 ) {
 	log.Debugf(`products configureMessageRoutes:
 	jsonMsg: %v, replyToRoutingKey: %v,

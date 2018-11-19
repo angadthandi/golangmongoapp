@@ -93,6 +93,7 @@ func main() {
 		MessagesRegistryClient,
 		dbRef,
 		hub,
+		hub.ChSendMsgToClientWithCorrelationId,
 	)
 
 	log.Printf("Listening on Port: %v", config.ServerPort)

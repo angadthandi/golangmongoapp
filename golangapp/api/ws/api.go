@@ -19,7 +19,7 @@ type Clienter interface {
 	)
 	WritePump()
 	SendMessageOnHub(jsonMsg json.RawMessage)
-	SetClientCorrelationId(correlationId string)
+	GetClientUUID() string
 }
 
 type Huber interface {
@@ -38,10 +38,9 @@ func ClientAPI(
 	MessagingClient messages.IMessagingClient,
 	MessagesRegistryClient messages.IMessagesRegistry,
 	jsonMsg json.RawMessage,
-	ChClientCorrelationIds chan<- string,
+	ChClientCorrelationIds chan<- []byte,
 ) {
-	log.Debugf("ws ClientAPI client Type: %T\n", c)
-	log.Debugf("ws ClientAPI client: %v\n", c)
+	log.Debug("ws ClientAPI")
 
 	respMsg, correlationId := API(
 		dbClient,
@@ -53,8 +52,20 @@ func ClientAPI(
 	log.Debugf("ws ClientAPI correlationId: %v\n", correlationId)
 
 	if correlationId != "" {
-		// c.SetClientCorrelationId(correlationId)
-		ChClientCorrelationIds <- correlationId
+		var clientUUIDCorrId jsondefinitions.ClientUUIDCorrelationID
+
+		// get clientUUID
+		clientUUIDCorrId.ClientUUID = c.GetClientUUID()
+		clientUUIDCorrId.ClientCorrelationId = correlationId
+
+		b, err := json.Marshal(clientUUIDCorrId)
+		if err != nil {
+			log.Debugf("ws ClientAPI Unable to marshal: %v",
+				err)
+			return
+		}
+
+		ChClientCorrelationIds <- b
 	} else {
 		// send message to all clients on hub
 		c.SendMessageOnHub(respMsg)
@@ -69,8 +80,7 @@ func HubAPI(
 	MessagesRegistryClient messages.IMessagesRegistry,
 	jsonMsg json.RawMessage,
 ) {
-	log.Debugf("ws HubAPI hub Type: %T\n", h)
-	log.Debugf("ws HubAPI hub: %v\n", h)
+	log.Debugf("ws HubAPI")
 
 	respMsg, correlationId := API(
 		dbClient,
@@ -81,7 +91,6 @@ func HubAPI(
 	log.Debugf("ws HubAPI correlationId: %v\n", correlationId)
 
 	h.SendMsgToAllClients(respMsg)
-	// log.Debugf("ws RegistryClient client Hub: %v", c.Hub)
 }
 
 // handler for ws/API
@@ -118,7 +127,6 @@ func API(
 	var resp jsondefinitions.GenericAPIResponse
 
 	resp.Api = msg.Api
-	// msg := "Test JSON Message!"
 	resp.Message = msg.Message
 
 	b, err := json.Marshal(resp)

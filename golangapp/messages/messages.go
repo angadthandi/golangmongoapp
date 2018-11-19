@@ -40,10 +40,12 @@ type IMessagingClient interface {
 			bool,
 			*mongo.Database,
 			interface{},
+			chan []byte,
 		),
 		MessagesRegistryClient IMessagesRegistry,
 		dbRef *mongo.Database,
 		writeReplyTo interface{}, // write reply to http/ws
+		hubCh chan []byte,
 	)
 	Close()
 }
@@ -173,10 +175,12 @@ func (m *MessagingClient) Receive(
 		bool,
 		*mongo.Database,
 		interface{},
+		chan []byte,
 	),
 	MessagesRegistryClient IMessagesRegistry,
 	dbRef *mongo.Database,
 	writeReplyTo interface{}, // write reply to http/ws
+	hubCh chan []byte,
 ) {
 	log.Debugf("Receiver %v", "Started")
 
@@ -251,6 +255,7 @@ func (m *MessagingClient) Receive(
 		MessagesRegistryClient,
 		dbRef,
 		writeReplyTo,
+		hubCh,
 		handlerFunc,
 	)
 
@@ -269,6 +274,7 @@ func (m *MessagingClient) consumeLoop(
 	MessagesRegistryClient IMessagesRegistry,
 	dbRef *mongo.Database,
 	writeReplyTo interface{}, // write reply to http/ws
+	hubCh chan []byte,
 	handlerFunc func(
 		*MessagingClient,
 		IMessagesRegistry,
@@ -278,6 +284,7 @@ func (m *MessagingClient) consumeLoop(
 		bool,
 		*mongo.Database,
 		interface{},
+		chan []byte,
 	),
 ) {
 	for d := range deliveries {
@@ -289,6 +296,7 @@ func (m *MessagingClient) consumeLoop(
 			MessagesRegistryClient,
 			dbRef,
 			writeReplyTo,
+			hubCh,
 			handlerFunc,
 		)
 

@@ -63,9 +63,9 @@ func DBGetProducts(
 		pMap := elem.Map()
 		log.Debugf("DBGetProducts pMap: %v", pMap)
 
-		ProductID, ok := pMap["_id"].(string)
+		ProductID, ok := pMap["_id"].(objectid.ObjectID)
 		if ok {
-			p.ProductID = ProductID
+			p.ProductID = ProductID.Hex()
 		}
 		ProductName, ok := pMap["productname"].(string)
 		if ok {

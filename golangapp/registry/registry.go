@@ -19,7 +19,7 @@ func ClientRegistry(
 	MessagingClient messages.IMessagingClient,
 	MessagesRegistryClient messages.IMessagesRegistry,
 	jsonMsg json.RawMessage,
-	ChClientCorrelationIds chan<- string,
+	ChClientCorrelationIds chan<- []byte,
 ) {
 	log.Debugf("registry ClientRegistry")
 	ws.ClientAPI(
@@ -39,7 +39,7 @@ func HubRegistry(
 	MessagesRegistryClient messages.IMessagesRegistry,
 	jsonMsg json.RawMessage,
 ) {
-	log.Debugf("registry ClientRegistry")
+	log.Debugf("registry HubRegistry")
 	ws.HubAPI(
 		h,
 		dbClient,

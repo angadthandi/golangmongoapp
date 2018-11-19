@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/angadthandi/golangmongoapp/golangapp/genuuid"
 	"github.com/angadthandi/golangmongoapp/golangapp/messages"
 	"github.com/angadthandi/golangmongoapp/golangapp/registry"
 	"github.com/gorilla/websocket"
@@ -49,31 +50,26 @@ type Client struct {
 	send chan []byte
 
 	// map of client correlationIds
-	clientCorrelationIds     map[string]bool
-	clientCorrelationIdsLock sync.RWMutex
+	clientCorrelationIds map[string]bool
+	// clientCorrelationIdsLock sync.RWMutex
+	clientCorrelationIdsLock *sync.RWMutex
 
-	// Buffered channel of inbound messages.
-	ChClientCorrelationIds chan string
+	// ClientUUID
+	ClientUUID string
+}
+
+// GetClientUUID
+func (c *Client) GetClientUUID() string {
+	log.Debugf("GetClientUUID Client.ClientUUID: %v",
+		c.ClientUUID)
+	return c.ClientUUID
 }
 
 // SendMessageOnHub sends received message from client
 // on broadcast channel of Hub
 func (c *Client) SendMessageOnHub(jsonMsg json.RawMessage) {
-	log.Debugf("client SendMessageOnHub c: %v", c)
 	log.Debugf("client SendMessageOnHub jsonMsg: %v", jsonMsg)
 	c.Hub.broadcast <- jsonMsg
-}
-
-// SetClientCorrelationId sets correlationId for client
-// in clientCorrelationIds map
-func (c *Client) SetClientCorrelationId(correlationId string) {
-	log.Debugf("client SetClientCorrelationId c: %v", c)
-	log.Debugf("client SetClientCorrelationId correlationId: %v",
-		correlationId)
-
-	c.clientCorrelationIdsLock.Lock()
-	c.clientCorrelationIds[correlationId] = true
-	c.clientCorrelationIdsLock.Unlock()
 }
 
 // readPump pumps messages from the websocket connection to the hub.
@@ -113,7 +109,7 @@ func (c *Client) ReadPump(
 			MessagingClient,
 			MessagesRegistryClient,
 			message,
-			c.ChClientCorrelationIds,
+			c.Hub.ChClientCorrelationIds,
 		)
 	}
 }
@@ -161,10 +157,6 @@ func (c *Client) WritePump() {
 			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				return
 			}
-		case correlationId, ok := <-c.ChClientCorrelationIds:
-			if ok {
-				c.SetClientCorrelationId(correlationId)
-			}
 		}
 	}
 }
@@ -184,11 +176,12 @@ func ServeWs(
 		return
 	}
 	client := &Client{
-		Hub:                    hub,
-		conn:                   conn,
-		send:                   make(chan []byte, 256),
-		clientCorrelationIds:   make(map[string]bool),
-		ChClientCorrelationIds: make(chan string),
+		Hub:                      hub,
+		conn:                     conn,
+		send:                     make(chan []byte, 256),
+		clientCorrelationIds:     make(map[string]bool),
+		clientCorrelationIdsLock: &sync.RWMutex{},
+		ClientUUID:               genuuid.GenUUID(),
 	}
 	client.Hub.register <- client
 

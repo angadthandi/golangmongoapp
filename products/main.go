@@ -75,5 +75,6 @@ func main() {
 		MessagesRegistryClient,
 		dbRef,
 		nil,
+		nil,
 	)
 }

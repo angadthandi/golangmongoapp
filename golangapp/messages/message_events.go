@@ -27,6 +27,7 @@ func handleRefreshEvent(
 	MessagesRegistryClient IMessagesRegistry,
 	dbRef *mongo.Database,
 	writeReplyTo interface{}, // write reply to http/ws
+	hubCh chan []byte,
 	handlerFunc func(
 		*MessagingClient,
 		IMessagesRegistry,
@@ -36,6 +37,7 @@ func handleRefreshEvent(
 		bool,
 		*mongo.Database,
 		interface{},
+		chan []byte,
 	),
 ) {
 	body := d.Body
@@ -81,6 +83,7 @@ func handleRefreshEvent(
 				true,
 				dbRef,
 				writeReplyTo,
+				hubCh,
 			)
 		} else {
 			log.Debug("HandleRefreshEvent: correlationId not found!")
@@ -97,6 +100,7 @@ func handleRefreshEvent(
 				false,
 				dbRef,
 				writeReplyTo,
+				hubCh,
 			)
 		}
 	}

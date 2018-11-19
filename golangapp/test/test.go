@@ -13,7 +13,6 @@ import (
 	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/mongo"
 	log "github.com/sirupsen/logrus"
-	// "github.com/mongodb/mongo-go-driver/tree/master/bson"
 )
 
 type Person struct {
