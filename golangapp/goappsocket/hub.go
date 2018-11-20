@@ -106,9 +106,7 @@ func setClientCorrelationId(h *Hub, b []byte) {
 
 	for c, _ := range h.clients {
 		if c.ClientUUID == clientUUIDCorrId.ClientUUID {
-			c.clientCorrelationIdsLock.Lock()
 			c.clientCorrelationIds[clientUUIDCorrId.ClientCorrelationId] = true
-			c.clientCorrelationIdsLock.Unlock()
 		}
 	}
 }
@@ -136,19 +134,13 @@ func sendMsgToClientWithCorrelationId(h *Hub, b []byte) {
 		msg)
 
 	for c, _ := range h.clients {
-		c.clientCorrelationIdsLock.RLock()
 		if _, ok := c.clientCorrelationIds[msg.CorrelationId]; ok {
-			c.send <- msg.ReceivedJsonMsg
-			// c.send <- b
+			// c.send <- msg.ReceivedJsonMsg
+			c.send <- b
 
-			c.clientCorrelationIdsLock.RUnlock()
-
-			c.clientCorrelationIdsLock.Lock()
 			delete(c.clientCorrelationIds, msg.CorrelationId)
-			c.clientCorrelationIdsLock.Unlock()
 
 			break
 		}
-		c.clientCorrelationIdsLock.RUnlock()
 	}
 }

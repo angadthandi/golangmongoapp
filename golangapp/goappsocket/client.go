@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
-	"sync"
 	"time"
 
 	"github.com/angadthandi/golangmongoapp/golangapp/genuuid"
@@ -51,8 +50,9 @@ type Client struct {
 
 	// map of client correlationIds
 	clientCorrelationIds map[string]bool
-	// clientCorrelationIdsLock sync.RWMutex
-	clientCorrelationIdsLock *sync.RWMutex
+	// Removed Locks, since clientCorrelationIds map
+	// is read & written on the same goroutine
+	// clientCorrelationIdsLock *sync.RWMutex
 
 	// ClientUUID
 	ClientUUID string
@@ -176,12 +176,11 @@ func ServeWs(
 		return
 	}
 	client := &Client{
-		Hub:                      hub,
-		conn:                     conn,
-		send:                     make(chan []byte, 256),
-		clientCorrelationIds:     make(map[string]bool),
-		clientCorrelationIdsLock: &sync.RWMutex{},
-		ClientUUID:               genuuid.GenUUID(),
+		Hub:                  hub,
+		conn:                 conn,
+		send:                 make(chan []byte, 256),
+		clientCorrelationIds: make(map[string]bool),
+		ClientUUID:           genuuid.GenUUID(),
 	}
 	client.Hub.register <- client
 
