@@ -135,8 +135,7 @@ func sendMsgToClientWithCorrelationId(h *Hub, b []byte) {
 
 	for c, _ := range h.clients {
 		if _, ok := c.clientCorrelationIds[msg.CorrelationId]; ok {
-			// c.send <- msg.ReceivedJsonMsg
-			c.send <- b
+			c.send <- msg.ReceivedJsonMsg
 
 			delete(c.clientCorrelationIds, msg.CorrelationId)
 
