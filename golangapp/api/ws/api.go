@@ -119,6 +119,14 @@ func API(
 			msg.Api,
 			msg.Message,
 		)
+	case "CreateProduct":
+		correlationId = sendToMessageQueue(
+			MessagingClient,
+			MessagesRegistryClient,
+			config.ProductsRoutingKey,
+			msg.Api,
+			msg.Message,
+		)
 
 	default:
 		correlationId = ""

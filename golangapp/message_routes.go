@@ -82,6 +82,9 @@ func configureMessageRoutes(
 		case "GetProducts":
 			resp = msg.Message
 			sendMsgToAllClients = false
+		case "CreateProduct":
+			resp = msg.Message
+			sendMsgToAllClients = true
 
 		default:
 			resp = msg.Message

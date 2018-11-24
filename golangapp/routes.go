@@ -44,6 +44,9 @@ func configureRoutes(
 	r.HandleFunc("/send", func(w http.ResponseWriter, r *http.Request) {
 		test.SendMQ(w, r, MessagingClient, MessagesRegistryClient)
 	})
+	r.HandleFunc("/createproduct", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "./public/createproduct.html")
+	})
 
 	// // static files
 	// r.HandleFunc("/vendor/", func(w http.ResponseWriter, r *http.Request) {
