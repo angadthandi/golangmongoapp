@@ -78,7 +78,7 @@ func configureMessageRoutes(
 		case "CreateProduct":
 			// create product and respond
 			// with new product
-			resp = controllers.GetProducts(dbRef)
+			resp = controllers.CreateProduct(dbRef, msg.Message)
 
 		default:
 			resp = "Invalid Message Type"
