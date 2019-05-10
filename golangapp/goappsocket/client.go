@@ -10,7 +10,8 @@ import (
 	"github.com/angadthandi/golangmongoapp/golangapp/messages"
 	"github.com/angadthandi/golangmongoapp/golangapp/registry"
 	"github.com/gorilla/websocket"
-	"github.com/mongodb/mongo-go-driver/mongo"
+	// "github.com/mongodb/mongo-go-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo"
 	log "github.com/sirupsen/logrus"
 )
 

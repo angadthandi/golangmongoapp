@@ -4,7 +4,8 @@ import (
 	"encoding/json"
 
 	"github.com/angadthandi/golangmongoapp/products/models"
-	"github.com/mongodb/mongo-go-driver/mongo"
+	// "github.com/mongodb/mongo-go-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo"
 	log "github.com/sirupsen/logrus"
 )
 

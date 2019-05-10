@@ -5,7 +5,8 @@ import (
 
 	"github.com/angadthandi/golangmongoapp/golangapp/api/ws"
 	"github.com/angadthandi/golangmongoapp/golangapp/messages"
-	"github.com/mongodb/mongo-go-driver/mongo"
+	// "github.com/mongodb/mongo-go-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo"
 
 	// This pakcage cannot inlcude goappsocket package
 	// otherwise it results in a circular dependency

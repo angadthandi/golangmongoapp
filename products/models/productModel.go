@@ -5,9 +5,13 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/mongodb/mongo-go-driver/bson"
-	"github.com/mongodb/mongo-go-driver/bson/objectid"
-	"github.com/mongodb/mongo-go-driver/mongo"
+	// "github.com/mongodb/mongo-go-driver/bson"
+	// "github.com/mongodb/mongo-go-driver/bson/objectid"
+	// "github.com/mongodb/mongo-go-driver/mongo"
+	"go.mongodb.org/mongo-driver/bson"
+	// "go.mongodb.org/mongo-driver/bson/bsontype"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 const ProductsTableName = "products"
@@ -63,7 +67,10 @@ func DBGetProducts(
 		pMap := elem.Map()
 		log.Debugf("DBGetProducts pMap: %v", pMap)
 
-		ProductID, ok := pMap["_id"].(objectid.ObjectID)
+		// ProductID, ok := pMap["_id"].(objectid.ObjectID)
+		// ProductID, ok := pMap["_id"].(bsontype.ObjectID)
+		ProductID, ok := pMap["_id"].(primitive.ObjectID)
+		// ProductID, ok := pMap["_id"].(bson.TypeObjectID)
 		if ok {
 			p.ProductID = ProductID.Hex()
 		}
@@ -124,6 +131,7 @@ func DBCreateProduct(
 		log.Errorf("Echo Collection Insert error: %v", err)
 	}
 
-	id := res.InsertedID.(objectid.ObjectID)
+	// id := res.InsertedID.(objectid.ObjectID)
+	id := res.InsertedID.(primitive.ObjectID)
 	log.Errorf("models DBCreateProduct Inserted id: %v", id)
 }

@@ -3,7 +3,8 @@ package main
 import (
 	"net/http"
 
-	"github.com/mongodb/mongo-go-driver/mongo"
+	// "github.com/mongodb/mongo-go-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/angadthandi/golangmongoapp/golangapp/api/rest"
 	"github.com/angadthandi/golangmongoapp/golangapp/goappsocket"

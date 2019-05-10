@@ -3,7 +3,8 @@ package main
 import (
 	"encoding/json"
 
-	"github.com/mongodb/mongo-go-driver/mongo"
+	// "github.com/mongodb/mongo-go-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/angadthandi/golangmongoapp/products/config"
 	"github.com/angadthandi/golangmongoapp/products/controllers"

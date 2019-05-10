@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/angadthandi/golangmongoapp/golangapp/config"
 	"github.com/angadthandi/golangmongoapp/golangapp/goappsocket"
@@ -12,7 +13,9 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	// https://godoc.org/github.com/mongodb/mongo-go-driver/mongo
-	"github.com/mongodb/mongo-go-driver/mongo"
+	// "github.com/mongodb/mongo-go-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var (
@@ -44,7 +47,10 @@ func main() {
 		config.MongoDBPassword + "@" +
 		config.MongoDBServiceName +
 		config.MongoDBPort
-	dbClient, err := mongo.Connect(context.Background(), dbUrl, nil)
+	// dbClient, err := mongo.Connect(context.Background(), dbUrl, nil)
+	// dbClient, err := mongo.NewClient(options.Client().ApplyURI(dbUrl))
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	dbClient, err := mongo.Connect(ctx, options.Client().ApplyURI(dbUrl))
 	if err != nil {
 		log.Fatalf("mongodb connection error : %v", err)
 	}
